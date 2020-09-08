@@ -222,7 +222,7 @@ class Dashboard {
     protected static function ValidateSubmit($Action) {
 
         if (!wp_verify_nonce($_POST[static::$OptionName.'_nonce'], $Action)) {
-            set_transient(self::$AdminMsgTransient, 'error-Invalid nonce.<br>'.var_export($_POST, true));
+            set_transient(self::$AdminMsgTransient, 'Session expired, please try again.');
             return false;
         }
         if (!isset($_POST['_wp_http_referer'])) {
