@@ -15,7 +15,7 @@ class Dashboard {
     public static $OptionName= 'fws_resize_on_demand';
 
     // transient key
-    protected static $AdminMsgTransient= 'fws_resize_on_demand_admin_msg';
+    protected static $AdminMsgTransient= 'fws_resize_on_demand_admin';
 
     // settings page slug
     protected static $AdminPageSlug= 'fws-resize-on-demand';
@@ -95,6 +95,11 @@ class Dashboard {
 
         // find current tab
         $CurrentTab= sanitize_key($_REQUEST['tab'] ?? '');
+        // get from stored tab focus
+        if (!isset(self::$AdminPages[$CurrentTab])) {
+            $CurrentTab= get_transient(self::$AdminMsgTransient.'_tab');
+        }
+        // start from first tab
         if (!isset(self::$AdminPages[$CurrentTab])) {
             $CurrentTab= array_keys(self::$AdminPages)[0];
         }
@@ -148,6 +153,9 @@ class Dashboard {
      */
     public static function OnPostSettings() {
 
+        // store tab focus
+        set_transient(self::$AdminMsgTransient.'_tab', 'settings');
+
         // validation
         if (self::ValidateSubmit(static::$ActionSettings)) {
 
@@ -159,7 +167,7 @@ class Dashboard {
             update_option(static::$OptionName, serialize($Settings));
 
             // prepare confirmation message
-            set_transient(self::$AdminMsgTransient, 'updated-Settings saved.');
+            set_transient(self::$AdminMsgTransient.'_msg', 'updated-Settings saved.');
         }
 
         // redirect to viewing context
@@ -172,6 +180,9 @@ class Dashboard {
      * Handle clearing thumbnails.
      */
     public static function OnPostDeleteThumbs() {
+
+        // store tab focus
+        set_transient(self::$AdminMsgTransient.'_tab', 'utils');
 
         // validation
         if (self::ValidateSubmit(static::$ActionDeleteThumbs)) {
@@ -204,7 +215,7 @@ class Dashboard {
             }
 
             // prepare confirmation message
-            set_transient(self::$AdminMsgTransient, 'updated-Cleared.');
+            set_transient(self::$AdminMsgTransient.'_msg', 'updated-Cleared.');
         }
 
         // redirect to viewing context
@@ -222,11 +233,11 @@ class Dashboard {
     protected static function ValidateSubmit($Action) {
 
         if (!wp_verify_nonce($_POST[static::$OptionName.'_nonce'], $Action)) {
-            set_transient(self::$AdminMsgTransient, 'Session expired, please try again.');
+            set_transient(self::$AdminMsgTransient.'_msg', 'error-Session expired, please try again.');
             return false;
         }
         if (!isset($_POST['_wp_http_referer'])) {
-            set_transient(self::$AdminMsgTransient, 'error-Missing target.');
+            set_transient(self::$AdminMsgTransient.'_msg', 'error-Missing target.');
             return false;
         }
         return true;
@@ -247,8 +258,8 @@ class Dashboard {
      */
     public static function RenderAdminNotice() {
 
-        $Message= get_transient(self::$AdminMsgTransient);
-        delete_transient(self::$AdminMsgTransient);
+        $Message= get_transient(self::$AdminMsgTransient.'_msg');
+        delete_transient(self::$AdminMsgTransient.'_msg');
 
         $Parts= explode('-', $Message, 2);
         if (count($Parts) === 2) {
