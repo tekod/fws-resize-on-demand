@@ -42,11 +42,9 @@ class Hooks {
         }
 
         // skip if requested size is not registered
-        global $_wp_additional_image_sizes;
-        if (!isset($_wp_additional_image_sizes[$Size])) {
+        if (!isset(self::GetRegisteredSizes()[$Size])) {
             return false;
         }
-
         // skip if thumbnail already exists
         $ImageData = wp_get_attachment_metadata($Id);
         if (is_array($ImageData) && isset($ImageData['sizes'][$Size])) {
@@ -55,6 +53,20 @@ class Hooks {
 
         // resize now
         return self::Resize($ImageData, $Id, $Size);
+    }
+
+
+    /**
+     * Return list of registered image sizes.
+     *
+     * @return array
+     */
+    protected static function GetRegisteredSizes() {
+
+        return wp_get_registered_image_subsizes();
+
+        //global $_wp_additional_image_sizes;
+        //return $_wp_additional_image_sizes;
     }
 
 
@@ -68,14 +80,14 @@ class Hooks {
      */
     protected static function Resize($ImageData, $Id, $Size) {
 
-        global $_wp_additional_image_sizes;
+        $RegisteredSizes = self::GetRegisteredSizes();
 
         // make the new thumb
         $Resized = image_make_intermediate_size(
             get_attached_file($Id),
-            $_wp_additional_image_sizes[$Size]['width'],
-            $_wp_additional_image_sizes[$Size]['height'],
-            $_wp_additional_image_sizes[$Size]['crop']
+            $RegisteredSizes[$Size]['width'],
+            $RegisteredSizes[$Size]['height'],
+            $RegisteredSizes[$Size]['crop']
         );
         if (!$Resized) {
             return false;   // resizing failed

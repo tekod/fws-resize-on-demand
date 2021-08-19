@@ -9,7 +9,7 @@
     </p>
     <p>
         Altrough price of hosting space is low and we have gigabytes available that can be issue if you have dozen
-        (or more) registered sizes and necause of that your backup files became larger then 10Gb.<br>
+        (or more) registered sizes and because of that your backup files became larger then 10Gb.<br>
         Sooner or later you will be in situation to download (or even worse - to upload) that backup file.
     </p>
     <p>
@@ -38,6 +38,10 @@
     <p>
         Button "Delete" on "Utilities" tab will remove all thumbnails for sizes that are handled by this plugin. <br>
         That will significaly reduce size of your "uploads" directory allowing new thumbnails to be recreated on demand.
+    </p>
+    <p>
+        Video demonstration:<br>
+        <iframe class="youtube-player" src="https://www.youtube.com/embed/hfbkbM-1dlY?version=3&amp;rel=1&amp;fs=1&amp;autohide=2&amp;showsearch=0&amp;showinfo=1&amp;iv_load_policy=1&amp;wmode=transparent" allowfullscreen="true" style="border:0;" width="480" height="330"></iframe>
     </p>
     <h3>Contact</h3>
     <p>
