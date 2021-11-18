@@ -16,8 +16,9 @@ class Hooks {
      */
     public static function Init() {
 
-        add_filter('image_downsize', [__CLASS__,'OnImageDownsize'], 10, 3);
-        add_filter('intermediate_image_sizes_advanced', [__CLASS__,'DisableSizes'], 10, 3);
+        add_filter('image_downsize', [__CLASS__, 'OnImageDownsize'], 10, 3);
+        add_filter('intermediate_image_sizes_advanced', [__CLASS__, 'DisableSizes'], 10, 3);
+        add_filter('image_size_names_choose', [__CLASS__, 'DisableNameChoose'], 10, 1);
     }
 
 
@@ -31,7 +32,7 @@ class Hooks {
      */
     public static function OnImageDownsize($Out, $Id, $Size) {
 
-        // skip is already resolved by previous filter
+        // skip if already resolved by previous filter
         if ($Out !== false) {
             return $Out;
         }
@@ -42,8 +43,7 @@ class Hooks {
         }
 
         // skip if requested size is not registered
-        global $_wp_additional_image_sizes;
-        if (!isset($_wp_additional_image_sizes[$Size])) {
+        if (!isset(self::GetRegisteredSizes()[$Size])) {
             return false;
         }
 
@@ -59,6 +59,20 @@ class Hooks {
 
 
     /**
+     * Return list of registered image sizes.
+     *
+     * @return array
+     */
+    protected static function GetRegisteredSizes() {
+
+        return wp_get_registered_image_subsizes();
+
+        //global $_wp_additional_image_sizes;
+        //return $_wp_additional_image_sizes;
+    }
+
+
+    /**
      * Resize image.
      *
      * @param array $ImageData
@@ -68,14 +82,14 @@ class Hooks {
      */
     protected static function Resize($ImageData, $Id, $Size) {
 
-        global $_wp_additional_image_sizes;
+        $RegisteredSizes = self::GetRegisteredSizes();
 
         // make the new thumb
         $Resized = image_make_intermediate_size(
             get_attached_file($Id),
-            $_wp_additional_image_sizes[$Size]['width'],
-            $_wp_additional_image_sizes[$Size]['height'],
-            $_wp_additional_image_sizes[$Size]['crop']
+            $RegisteredSizes[$Size]['width'],
+            $RegisteredSizes[$Size]['height'],
+            $RegisteredSizes[$Size]['crop']
         );
         if (!$Resized) {
             return false;   // resizing failed
@@ -100,7 +114,7 @@ class Hooks {
      *
      * @param array $Sizes         An associative array of registered thumbnail image sizes.
      * @param array $Metadata      An associative array of fullsize image metadata: width, height, file.
-     * @param int   $AttachmentId Attachment ID. Only passed from WP 5.0+.
+     * @param int   $AttachmentId  Attachment ID. Only passed from WP 5.0+.
      * @return mixed
      */
     public static function DisableSizes($Sizes, $Metadata, $AttachmentId=null) {
@@ -124,6 +138,20 @@ class Hooks {
             self::$SizesToHandle= $Options['HandleSizes'];
         }
         return self::$SizesToHandle;
+    }
+
+
+    /**
+     * Prevent function "wp_prepare_attachment_for_js" to create all sizes during uploading process.
+     *
+     * @param array $Names
+     * @return array
+     */
+    public static function DisableNameChoose($Names) {
+
+        return did_action('add_attachment')
+            ? ['thumbnail' => __('Thumbnail')]
+            : $Names;
     }
 
 }

@@ -181,6 +181,8 @@ class Dashboard {
      */
     public static function OnPostDeleteThumbs() {
 
+        global $wpdb;
+
         // store tab focus
         set_transient(self::$AdminMsgTransient.'_tab', 'utils');
 
@@ -189,38 +191,76 @@ class Dashboard {
 
             $UploadsDir= wp_get_upload_dir()['basedir'];
             $HandleSizes= Config::Get()['HandleSizes'];
+            $TotalCount= 0;
 
-            // execute clearing
-            global $wpdb;
-            $SQL= "SELECT * FROM `{$wpdb->prefix}postmeta` WHERE `meta_key`='_wp_attachment_metadata'";
+            // get count of attachment records
+            $RecordsCount= $wpdb->get_var("SELECT count(*) FROM `{$wpdb->prefix}postmeta` WHERE `meta_key`='_wp_attachment_metadata'");
 
-            // loop
-            foreach($wpdb->get_results($SQL, ARRAY_A) as $Row) {
-                $Meta= unserialize($Row['meta_value']) ?? [];
-                if (!$Meta || !isset($Meta['sizes'])) {
-                    continue;   // possibly not image
-                }
-                $NeedUpdateMeta= false;
-                foreach($Meta['sizes'] as $Key => $SizePack) {
-                    if (in_array($Key, $HandleSizes)) {
-                        $NeedUpdateMeta = true;
-                        $ThumbPath= $UploadsDir . '/' . dirname($Meta['file']) . '/' . $SizePack['file'];
-                        unlink($ThumbPath);
-                        unset($Meta['sizes'][$Key]);
-                    }
-                }
-                if ($NeedUpdateMeta) {
-                    wp_update_attachment_metadata($Row['post_id'], $Meta);
+            // fetch records in chunks of 1000
+            for ($i=0; $i<$RecordsCount/1000; $i++){
+                $SQL= "SELECT * FROM `{$wpdb->prefix}postmeta` WHERE `meta_key`='_wp_attachment_metadata' LIMIT 1000 OFFSET ".($i*1000);
+
+                // process all records in chunk
+                foreach($wpdb->get_results($SQL, ARRAY_A) as $Row) {
+                    $TotalCount += self::RemoveHandledSizesFromAttachment($Row, $UploadsDir, $HandleSizes);
                 }
             }
 
             // prepare confirmation message
-            set_transient(self::$AdminMsgTransient.'_msg', 'updated-Cleared.');
+            set_transient(self::$AdminMsgTransient.'_msg', "updated-Removed $TotalCount thumbnails.");
         }
 
         // redirect to viewing context
         wp_safe_redirect(urldecode($_POST['_wp_http_referer']));
         die();
+    }
+
+
+    /**
+     * Analyze attachment record, delete and unregister thumbnails.
+     *
+     * @param $Attachment
+     * @param $UploadsDir
+     * @param $HandleSizes
+     * @return int
+     */
+    protected static function RemoveHandledSizesFromAttachment($Attachment, $UploadsDir, $HandleSizes) {
+
+        $NeedUpdateMeta = false;
+        $CountRemoved= 0;
+
+        // unpack meta value
+        $Meta = unserialize($Attachment['meta_value']) ?? [];
+        if (!$Meta || !isset($Meta['sizes'])) {
+            return 0;   // probably not an image
+        }
+
+        // check each size
+        foreach ($Meta['sizes'] as $Key => $SizePack) {
+
+            if (!in_array($Key, $HandleSizes)) {
+                continue; // keep that image-size
+            }
+
+            // delete file if exist
+            $ThumbPath = $UploadsDir . '/' . dirname($Meta['file']) . '/' . $SizePack['file'];
+            if (is_file($ThumbPath)) {
+                unlink($ThumbPath);
+                $CountRemoved++ ;
+            }
+
+            // remove from record
+            $NeedUpdateMeta = true;
+            unset($Meta['sizes'][$Key]);
+        }
+
+        // update meta field
+        if ($NeedUpdateMeta) {
+            wp_update_attachment_metadata($Attachment['post_id'], $Meta);
+        }
+
+        // return count
+        return $CountRemoved;
     }
 
 
