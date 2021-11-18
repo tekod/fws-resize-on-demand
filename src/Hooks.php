@@ -46,7 +46,6 @@ class Hooks {
         if (!isset(self::GetRegisteredSizes()[$Size])) {
             return false;
         }
-
         // skip if thumbnail already exists
         $ImageData = wp_get_attachment_metadata($Id);
         if (is_array($ImageData) && isset($ImageData['sizes'][$Size])) {
@@ -155,3 +154,4 @@ class Hooks {
     }
 
 }
+
