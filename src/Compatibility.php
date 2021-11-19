@@ -11,6 +11,7 @@ class Compatibility {
     protected static $Patches= [
         'wpGraphQL',
         'ACF',
+        'RegenerateThumbnails'
     ];
 
 
@@ -71,4 +72,13 @@ class Compatibility {
         }, 9, 3);
     }
 
+    /**
+     * Compatibility solution for Regenerate Thumbnails plugin.
+     * Prevents missing thumbnails from being generated when handled by this plugin.
+     */
+    protected static function RegenerateThumbnails() {
+        add_filter('regenerate_thumbnails_missing_thumbnails', function($sizes, $fullsize_metadata = [], $_instance = null) {
+            return Hooks::DisableSizes($sizes, $fullsize_metadata);
+        });
+    }
 }
