@@ -134,7 +134,8 @@ class Hooks {
 
         if (self::$SizesToHandle === null) {
             $Options = Config::Get();
-            self::$SizesToHandle= $Options['HandleSizes'];
+            $ProgrammaticSizes = apply_filters('fws_rod_sizes', []);
+            self::$SizesToHandle = array_unique(array_merge($Options['HandleSizes'], $ProgrammaticSizes));
         }
         return self::$SizesToHandle;
     }
