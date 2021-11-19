@@ -191,6 +191,7 @@ class Dashboard {
 
             $UploadsDir= wp_get_upload_dir()['basedir'];
             $HandleSizes= Config::Get()['HandleSizes'];
+            $AvoidMimeTypes= apply_filters('fws_rod_avoid_mime_types', ['image/svg+xml']);
             $TotalCount= 0;
 
             // get count of attachment records
@@ -202,7 +203,7 @@ class Dashboard {
 
                 // process all records in chunk
                 foreach($wpdb->get_results($SQL, ARRAY_A) as $Row) {
-                    $TotalCount += self::RemoveHandledSizesFromAttachment($Row, $UploadsDir, $HandleSizes);
+                    $TotalCount += self::RemoveHandledSizesFromAttachment($Row, $UploadsDir, $HandleSizes, $AvoidMimeTypes);
                 }
             }
 
@@ -222,9 +223,10 @@ class Dashboard {
      * @param $Attachment
      * @param $UploadsDir
      * @param $HandleSizes
+     * @param $AvoidMimeTypes
      * @return int
      */
-    protected static function RemoveHandledSizesFromAttachment($Attachment, $UploadsDir, $HandleSizes) {
+    protected static function RemoveHandledSizesFromAttachment($Attachment, $UploadsDir, $HandleSizes, $AvoidMimeTypes) {
 
         $NeedUpdateMeta = false;
         $CountRemoved= 0;
@@ -238,8 +240,9 @@ class Dashboard {
         // check each size
         foreach ($Meta['sizes'] as $Key => $SizePack) {
 
-            if (!in_array($Key, $HandleSizes)) {
-                continue; // keep that image-size
+            // should we keep that thumbnail?
+            if (!in_array($Key, $HandleSizes) || in_array($SizePack['mime-type'], $AvoidMimeTypes)) {
+                continue;
             }
 
             // delete file if exist
