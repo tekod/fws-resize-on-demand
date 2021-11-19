@@ -83,20 +83,43 @@ class Hooks {
 
         $RegisteredSizes = self::GetRegisteredSizes();
 
-        // make the new thumb
-        $Resized = image_make_intermediate_size(
-            get_attached_file($Id),
-            $RegisteredSizes[$Size]['width'],
-            $RegisteredSizes[$Size]['height'],
-            $RegisteredSizes[$Size]['crop']
-        );
-        if (!$Resized) {
-            return false;   // resizing failed
+        // the image sizes to handle
+        $SizesToGenerate = [];
+
+        // add high-resolution variants of the requested size
+        $HighResolutionPattern = '/^' . preg_quote($Size, '/') . '@[1-9]+(\\.[0-9]+)?x$/';
+        foreach ($RegisteredSizes as $RegisteredSizeName => $_RegisteredSizeData) {
+            if (
+                preg_match($HighResolutionPattern, $RegisteredSizeName) &&
+                !isset($ImageData['sizes'][$RegisteredSizeName])
+            ) {
+                $SizesToGenerate[] = $RegisteredSizeName;
+            }
         }
 
-        // save image meta, or WP can't see that the thumb exists now
-        $ImageData['sizes'][$Size]= $Resized;
-        wp_update_attachment_metadata($Id, $ImageData);
+        // add requested size last to return the correct $Resized data
+        $SizesToGenerate[] = $Size;
+
+        foreach ($SizesToGenerate as $SizeToGenerate) {
+            $SizeData = $RegisteredSizes[$SizeToGenerate];
+
+            // make the new thumb
+            $Resized = image_make_intermediate_size(
+                get_attached_file($Id),
+                $SizeData['width'],
+                $SizeData['height'],
+                $SizeData['crop']
+            );
+
+            if ($Resized) {
+                // save image meta, or WP can't see that the thumb exists now
+                $ImageData['sizes'][$SizeToGenerate]= $Resized;
+                wp_update_attachment_metadata($Id, $ImageData);
+            } elseif ($SizeToGenerate === $Size) {
+                // resizing of requested size failed
+                return false;
+            }
+        }
 
         // return the array for displaying the resized image
         return array(
