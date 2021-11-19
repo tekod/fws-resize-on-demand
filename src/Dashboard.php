@@ -238,7 +238,7 @@ class Dashboard {
         // check each size
         foreach ($Meta['sizes'] as $Key => $SizePack) {
 
-            if (!in_array($Key, $HandleSizes)) {
+            if (!in_array($Key, $HandleSizes) || $SizePack['mime-type'] === 'image/svg+xml') {
                 continue; // keep that image-size
             }
 
