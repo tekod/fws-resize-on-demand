@@ -6,7 +6,9 @@
     $OptionName= \FWS\ROD\Dashboard::$OptionName;
     $RedirectURL= urlencode($_SERVER['REQUEST_URI']);
     $CurrSettings= unserialize(get_option($OptionName)) ?? [];
-    $CurrSettings['HandleSizes']= $CurrSettings['HandleSizes'] ?? [];
+    $ProgrammaticSizes= apply_filters('fws_rod_sizes', []);
+    $ManualSizes= $CurrSettings['HandleSizes'] ?? [];
+    $CurrSettings['HandleSizes']= array_unique(array_merge($ManualSizes, $ProgrammaticSizes));
 ?>
 <style>
     .fws_rod h1 {
@@ -34,7 +36,11 @@
     }
     .fws_rod form table th {
         text-align: right;
+        vertical-align: top;
         width: 3em;
+    }
+    .fws_rod form table th input[type="checkbox"] {
+        margin-top: 1px;
     }
     .fws_rod form table span {
         color: gray;
@@ -54,8 +60,14 @@
         <tr>
             <?php $Description= $Size['width'].' x '.$Size['height'].($Size['crop'] ? ', crop' : ''); ?>
             <?php $Checked= in_array($Key, $CurrSettings['HandleSizes']) ? ' checked' : ''; ?>
-            <th><input type="checkbox" name="fws_ROD_Sizes[]" id="<?php echo esc_attr($Key);?>" value="<?php echo esc_attr($Key);?>"<?php echo $Checked; ?>></th>
-            <td><label for="<?php echo esc_attr($Key);?>"><b><?php echo esc_html($Key);?></b><span>(<?php echo esc_html($Description);?>)</span></label></td>
+            <?php $Disabled= in_array($Key, $ProgrammaticSizes) ? ' disabled' : ''; ?>
+            <th><input type="checkbox" name="fws_ROD_Sizes[]" id="<?php echo esc_attr($Key);?>" value="<?php echo esc_attr($Key);?>"<?php echo $Checked; ?><?php echo $Disabled; ?>></th>
+            <td>
+                <label for="<?php echo esc_attr($Key);?>"><b><?php echo esc_html($Key);?></b><span>(<?php echo esc_html($Description);?>)</span></label>
+                <?php if (in_array($Key, $ProgrammaticSizes)): ?>
+                    <p><em>This size has been enabled programmatically and can therefore not be disabled.</em></p>
+                <?php endif ?>
+            </td>
         </tr>
         <?php } ?>
     </table>
