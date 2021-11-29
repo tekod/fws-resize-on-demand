@@ -27,7 +27,7 @@ class Services {
      *
      * @return array
      */
-    protected static function GetSizesToHandle() {
+    public static function GetSizesToHandle() {
 
         if (self::$SizesToHandle === null) {
             // get from configuration
