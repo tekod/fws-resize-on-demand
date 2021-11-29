@@ -10,9 +10,7 @@ class Dashboard {
     // form actions
     public static $ActionSettings= 'fws_rod_settings';
     public static $ActionDeleteThumbs= 'fws_rod_delete_thumbs';
-
-    // "options" table identifier
-    public static $OptionName= 'fws_resize_on_demand';
+    public static $ActionEnableLogging= 'fws_rod_enable_logging';
 
     // transient key
     protected static $AdminMsgTransient= 'fws_resize_on_demand_admin';
@@ -49,8 +47,9 @@ class Dashboard {
         });
 
         // register handlers
-        add_action('admin_post_'.static::$ActionSettings, [__CLASS__, 'OnPostSettings']);
-        add_action('admin_post_'.static::$ActionDeleteThumbs, [__CLASS__, 'OnPostDeleteThumbs']);
+        add_action('admin_post_'.static::$ActionSettings, [__CLASS__, 'OnActionSaveSettings']);
+        add_action('admin_post_'.static::$ActionDeleteThumbs, [__CLASS__, 'OnActionDeleteThumbs']);
+        add_action('admin_post_'.static::$ActionEnableLogging, [__CLASS__, 'OnActionEnableLogging']);
 
         // catch other admin hooks
         add_filter("plugin_action_links_".FWS_ROD_PLUGINBASENAME, [$Dashboard, 'SettingsLinks']);
@@ -79,7 +78,7 @@ class Dashboard {
 
         $PluginURL= plugin_dir_url(FWS_ROD_DIR.'/.');
         //wp_enqueue_style( 'FWSStyle', $PluginURL.'assets/style.css' );
-        wp_enqueue_script( 'FWSScript', $PluginURL.'assets/scripts.js');
+        wp_enqueue_script( 'FWSScript', $PluginURL.'assets/scripts.js', [], FWS_ROD_VERSION);
     }
 
 
@@ -151,7 +150,7 @@ class Dashboard {
     /**
      * Handle saving settings.
      */
-    public static function OnPostSettings() {
+    public static function OnActionSaveSettings() {
 
         // store tab focus
         set_transient(self::$AdminMsgTransient.'_tab', 'settings');
@@ -161,10 +160,10 @@ class Dashboard {
 
             // update settings
             $Sizes= array_map('sanitize_text_field', (array)$_POST['fws_ROD_Sizes'] ?? []);
-            $Settings = [
-                'HandleSizes' => $Sizes,
-            ];
-            update_option(static::$OptionName, serialize($Settings));
+            Config::Set([
+                'HandleSizes' => Services::ApplyFiltersOnSizesToHandle($Sizes),
+            ]);
+            Config::Save();
 
             // prepare confirmation message
             set_transient(self::$AdminMsgTransient.'_msg', 'updated-Settings saved.');
@@ -179,7 +178,7 @@ class Dashboard {
     /**
      * Handle clearing thumbnails.
      */
-    public static function OnPostDeleteThumbs() {
+    public static function OnActionDeleteThumbs() {
 
         global $wpdb;
 
@@ -209,6 +208,33 @@ class Dashboard {
 
             // prepare confirmation message
             set_transient(self::$AdminMsgTransient.'_msg', "updated-Removed $TotalCount thumbnails.");
+        }
+
+        // redirect to viewing context
+        wp_safe_redirect(urldecode($_POST['_wp_http_referer']));
+        die();
+    }
+
+
+    /**
+     * Handle saving logging settings.
+     */
+    public static function OnActionEnableLogging() {
+
+        // store tab focus
+        set_transient(self::$AdminMsgTransient.'_tab', 'utils');
+
+        // validation
+        if (self::ValidateSubmit(static::$ActionEnableLogging)) {
+
+            // update settings
+            Config::Set([
+                'EnableLogging' => intval($_POST['fws_ROD_Logging'] ?? ''),
+            ]);
+            Config::Save();
+
+            // prepare confirmation message
+            set_transient(self::$AdminMsgTransient.'_msg', 'updated-Settings saved.');
         }
 
         // redirect to viewing context
@@ -275,7 +301,7 @@ class Dashboard {
      */
     protected static function ValidateSubmit($Action) {
 
-        if (!wp_verify_nonce($_POST[static::$OptionName.'_nonce'], $Action)) {
+        if (!wp_verify_nonce($_POST[Config::$OptionName.'_nonce'], $Action)) {
             set_transient(self::$AdminMsgTransient.'_msg', 'error-Session expired, please try again.');
             return false;
         }

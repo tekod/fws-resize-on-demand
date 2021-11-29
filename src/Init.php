@@ -25,7 +25,9 @@ class Init {
 
         // register background service
         if (empty(static::RequirementsReport())) {
+            require 'Services.php';
             require 'Hooks.php';
+            Services::Init();
             Hooks::Init();
         }
     }

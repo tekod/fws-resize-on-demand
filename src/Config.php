@@ -8,12 +8,16 @@
 class Config {
 
     // buffer for loaded configuration
-    protected static $Settings;
+    protected static $Settings= [];
 
     // default structure
     protected static $DefaultSettings= [
         'HandleSizes'=> [], // array of size names
+        'EnableLogging'=> false,
     ];
+
+    // "options" table identifier
+    public static $OptionName= 'fws_resize_on_demand';
 
 
     /**
@@ -24,10 +28,10 @@ class Config {
     public static function Init() {
 
         // load from "options" table
-        $Settings= unserialize(get_option('fws_resize_on_demand')) ?? [];
+        $Settings= unserialize(get_option(self::$OptionName)) ?? [];
 
-        // resolve and set settings
-        self::$Settings= self::ResolveSettings($Settings);
+        // set settings
+        self::Set($Settings);
     }
 
 
@@ -39,6 +43,28 @@ class Config {
     public static function Get() {
 
         return self::$Settings;
+    }
+
+
+    /**
+     * Set configuration.
+     */
+    public static function Set($Settings) {
+
+        // merge with current settings
+        $Settings= $Settings + self::$Settings;
+
+        // resolve and store in cache
+        self::$Settings= self::ResolveSettings($Settings);
+    }
+
+
+    /**
+     * Store configuration in database.
+     */
+    public static function Save() {
+
+        update_option(self::$OptionName, serialize(self::$Settings));
     }
 
 

@@ -7,17 +7,13 @@
 class Hooks {
 
 
-    // cached configuration
-    protected static $SizesToHandle= null;
-
-
     /**
      * Initialize monitoring.
      */
     public static function Init() {
 
         add_filter('image_downsize', [__CLASS__, 'OnImageDownsize'], 10, 3);
-        add_filter('intermediate_image_sizes_advanced', [__CLASS__, 'DisableSizes'], 10, 3);
+        add_filter('intermediate_image_sizes_advanced', [__CLASS__, 'RemoveSizesFromAutoResizing'], 10, 3);
         add_filter('image_size_names_choose', [__CLASS__, 'DisableNameChoose'], 10, 1);
     }
 
@@ -32,8 +28,11 @@ class Hooks {
      */
     public static function OnImageDownsize($Out, $Id, $Size) {
 
+        Services::Log("OnImageDownsize: id:$Id -> '$Size' size.");
+
         // skip if already resolved by previous filter
         if ($Out !== false) {
+            Services::Log('Image already resolved by previous filters. Skip.');
             return $Out;
         }
 
@@ -49,6 +48,7 @@ class Hooks {
         // skip if thumbnail already exists
         $ImageData = wp_get_attachment_metadata($Id);
         if (is_array($ImageData) && isset($ImageData['sizes'][$Size])) {
+            Services::Log('Thumb already exist. Skip.');
             return false;
         }
 
@@ -65,9 +65,6 @@ class Hooks {
     protected static function GetRegisteredSizes() {
 
         return wp_get_registered_image_subsizes();
-
-        //global $_wp_additional_image_sizes;
-        //return $_wp_additional_image_sizes;
     }
 
 
@@ -81,22 +78,51 @@ class Hooks {
      */
     protected static function Resize($ImageData, $Id, $Size) {
 
-        $RegisteredSizes = self::GetRegisteredSizes();
+        $RegisteredSizes= self::GetRegisteredSizes();
+        $SizeData= $RegisteredSizes[$Size];
+        Services::Log("Resize '$ImageData[file]' to '$Size' size ($SizeData[width]x$SizeData[height])", true);
+
+        // first search for higher-resolution sizes to properly create "srcset"
+        $HighResolutionPattern = '/^' . preg_quote($Size, '/') . '@[1-9]+(\\.[0-9]+)?x$/';
+        foreach ($RegisteredSizes as $SubName => $SubData) {
+            if (!isset($ImageData['sizes'][$SubName]) && preg_match($HighResolutionPattern, $SubName)) {
+                Services::Log("Resize to higher-resolution size '$SubName'.");
+                self::ResizeSingleImage($ImageData, $Id, $SubName, $SubData); // resize and ignore result
+            }
+        }
+
+        // now resize image to requested image-size
+        return self::ResizeSingleImage($ImageData, $Id, $Size, $SizeData);
+    }
+
+
+    /**
+     * Perform actual image resizing.
+     *
+     * @param array $ImageData
+     * @param int $Id
+     * @param string $SizeName
+     * @param array $SizeData
+     * @return array|false
+     */
+    protected static function ResizeSingleImage($ImageData, $Id, $SizeName, $SizeData) {
 
         // make the new thumb
         $Resized = image_make_intermediate_size(
             get_attached_file($Id),
-            $RegisteredSizes[$Size]['width'],
-            $RegisteredSizes[$Size]['height'],
-            $RegisteredSizes[$Size]['crop']
+            $SizeData['width'],
+            $SizeData['height'],
+            $SizeData['crop']
         );
         if (!$Resized) {
+            Services::Log('Failed to resize. Exit.');
             return false;   // resizing failed
         }
 
         // save image meta, or WP can't see that the thumb exists now
-        $ImageData['sizes'][$Size]= $Resized;
+        $ImageData['sizes'][$SizeName]= $Resized;
         wp_update_attachment_metadata($Id, $ImageData);
+        Services::Log("Successfully created '$Resized[file]'.");
 
         // return the array for displaying the resized image
         return array(
@@ -110,15 +136,16 @@ class Hooks {
 
     /**
      * Remove specified images from list for automatic resizing.
+     * This method is listener of "intermediate_image_sizes_advanced" filter hook.
      *
      * @param array $Sizes         An associative array of registered thumbnail image sizes.
      * @param array $Metadata      An associative array of fullsize image metadata: width, height, file.
      * @param int   $AttachmentId  Attachment ID. Only passed from WP 5.0+.
      * @return mixed
      */
-    public static function DisableSizes($Sizes, $Metadata, $AttachmentId=null) {
+    public static function RemoveSizesFromAutoResizing($Sizes, $Metadata, $AttachmentId=null) {
 
-        foreach(self::GetSizesToHandle() as $Size) {
+        foreach(Services::GetSizesToHandle() as $Size) {
             unset($Sizes[$Size]);
         }
         return $Sizes;
@@ -126,23 +153,8 @@ class Hooks {
 
 
     /**
-     * Get list of image sizes to handle.
-     *
-     * @return array
-     */
-    protected static function GetSizesToHandle() {
-
-        if (self::$SizesToHandle === null) {
-            $Options = Config::Get();
-            $ProgrammaticSizes = apply_filters('fws_rod_sizes', []);
-            self::$SizesToHandle = array_unique(array_merge($Options['HandleSizes'], $ProgrammaticSizes));
-        }
-        return self::$SizesToHandle;
-    }
-
-
-    /**
      * Prevent function "wp_prepare_attachment_for_js" to create all sizes during uploading process.
+     * This method is listener of "image_size_names_choose" filter hook.
      *
      * @param array $Names
      * @return array

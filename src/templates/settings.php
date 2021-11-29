@@ -3,12 +3,14 @@
 
     $Sizes= wp_get_registered_image_subsizes();
     $Action= \FWS\ROD\Dashboard::$ActionSettings;
-    $OptionName= \FWS\ROD\Dashboard::$OptionName;
-    $RedirectURL= urlencode($_SERVER['REQUEST_URI']);
-    $CurrSettings= unserialize(get_option($OptionName)) ?? [];
-    $ProgrammaticSizes= apply_filters('fws_rod_sizes', []);
-    $ManualSizes= $CurrSettings['HandleSizes'] ?? [];
-    $CurrSettings['HandleSizes']= array_unique(array_merge($ManualSizes, $ProgrammaticSizes));
+    $OptionName= \FWS\ROD\Config::$OptionName;
+    $RedirectURL= urlencode($_SERVER['REQUEST_URI'] ?? '');
+    $CurrSettings= \FWS\ROD\Config::Get();
+
+    $HandleSizes= $CurrSettings['HandleSizes'] ?? [];
+    $ForceHandleSizes= apply_filters('fws_rod_enable_sizes', []);
+    $ForceDisableSizes= apply_filters('fws_rod_disable_sizes', []);
+
 ?>
 <style>
     .fws_rod h1 {
@@ -42,10 +44,23 @@
     .fws_rod form table th input[type="checkbox"] {
         margin-top: 1px;
     }
+    .fws_rod form table th input[type="checkbox"]:disabled {
+        cursor: not-allowed;
+    }
+    .fws_rod form table label {
+        margin-right: 4em;
+    }
     .fws_rod form table span {
         color: gray;
         padding-left: 1em;
         font-size: 90%;
+    }
+    .fws_rod form table p {
+        display: inline-block;
+        margin: 0;
+        vertical-align: middle;
+        color: gray;
+        font-style: italic;
     }
 </style>
 <h3>Apply on-demand resizing on these image sizes:</h3>
@@ -58,15 +73,37 @@
         </tr>
         <?php foreach($Sizes as $Key => $Size) { ?>
         <tr>
-            <?php $Description= $Size['width'].' x '.$Size['height'].($Size['crop'] ? ', crop' : ''); ?>
-            <?php $Checked= in_array($Key, $CurrSettings['HandleSizes']) ? ' checked' : ''; ?>
-            <?php $Disabled= in_array($Key, $ProgrammaticSizes) ? ' disabled' : ''; ?>
-            <th><input type="checkbox" name="fws_ROD_Sizes[]" id="<?php echo esc_attr($Key);?>" value="<?php echo esc_attr($Key);?>"<?php echo $Checked; ?><?php echo $Disabled; ?>></th>
+            <?php
+                $Description= $Size['width'].' x '.$Size['height'].($Size['crop'] ? ', crop' : '');
+                $Checked= in_array($Key, $HandleSizes) ? ' checked' : '';
+                $Disabled= '';
+                $Notice= '';
+                if (in_array($Key, $ForceHandleSizes)) {
+                    $Checked= ' checked';
+                    $Disabled= ' disabled';
+                    $Notice= 'This size has been enabled programmatically.';
+                }
+                if (in_array($Key, $ForceDisableSizes)) {
+                    $Checked= '';
+                    $Disabled= ' disabled';
+                    $Notice= 'This size has been disabled programmatically.';
+                }
+            ?>
+            <th>
+                <input type="checkbox"
+                       name="fws_ROD_Sizes[]"
+                       id="<?php echo esc_attr($Key);?>"
+                       value="<?php echo esc_attr($Key);?>"
+                       <?php echo $Checked; ?><?php echo $Disabled; ?>>
+            </th>
             <td>
-                <label for="<?php echo esc_attr($Key);?>"><b><?php echo esc_html($Key);?></b><span>(<?php echo esc_html($Description);?>)</span></label>
-                <?php if (in_array($Key, $ProgrammaticSizes)): ?>
-                    <p><em>This size has been enabled programmatically and can therefore not be disabled.</em></p>
-                <?php endif ?>
+                <label for="<?php echo esc_attr($Key);?>">
+                    <b><?php echo esc_html($Key);?></b>
+                    <span>(<?php echo esc_html($Description);?>)</span>
+                </label>
+                <?php if ($Notice) { ?>
+                    <p><?php echo esc_html($Notice); ?></p>
+                <?php } ?>
             </td>
         </tr>
         <?php } ?>

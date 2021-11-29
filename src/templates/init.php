@@ -40,6 +40,12 @@
         That will significaly reduce size of your "uploads" directory allowing new thumbnails to be recreated on demand.
     </p>
     <p>
+        Hooks:<br>
+        - fws_rod_avoid_mime_types - specify mime-types that have to be skipped by Utilities/Delete feature,<br>
+        - fws_rod_enable_sizes - configure plugin to handle specified image-sizes,<br>
+        - fws_rod_disable_sizes - configure plugin to avoid handling specified image-sizes<br>
+    </p>
+    <p>
         Video demonstration:<br>
         <iframe class="youtube-player" src="https://www.youtube.com/embed/hfbkbM-1dlY?version=3&amp;rel=1&amp;fs=1&amp;autohide=2&amp;showsearch=0&amp;showinfo=1&amp;iv_load_policy=1&amp;wmode=transparent" allowfullscreen="true" style="border:0;" width="480" height="330"></iframe>
     </p>

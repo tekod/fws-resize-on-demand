@@ -1,9 +1,9 @@
 === FWS On-Demand-Resizer ===
 Contributors: tekod
-Tags: images, smart, resizing, resizer
+Tags: images, smart, resize, resizing, resizer, thumbnails
 Requires at least: 4.7
 Tested up to: 5.8
-Stable tag: 0.2
+Stable tag: 0.3.0
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -49,3 +49,19 @@ Video demonstration:
     
 Please, send bug reports and feature requests to <a href="mailto:office@tekod.com">office@tekod.com</a>
 
+== Changelog ==
+
+= 0.3.0 =
+*Release Date - 28 November 2021*
+
+* Enhancement - Added compatibility with "Regenerate Thumbnails" plugin. Thanks to [Florian Reuschel](https://github.com/loilo).
+* Enhancement - Added compatibility with "SVG Support" plugin. Thanks to [Florian Reuschel](https://github.com/loilo)
+* Enhancement - Added debug logging feature.
+* Dev - Added filter "fws_rod_avoid_mime_types" to specify mime-types that have to be skipped by Utilities/Delete feature.
+* Dev - Added filter "fws_rod_enable_sizes" to configure plugin to handle specified image-sizes.
+* Dev - Added filter "fws_rod_disable_sizes" to configure plugin to avoid handling specified image-sizes.
+
+= 0.2.2 =
+*Release Date - 19 November 2021*
+
+* Fix - Fixed bug in handling core image sizes (thumbnail, medium, large).

@@ -12,7 +12,7 @@ function FwsRodTab(Slug){
 }
 
 function FwsRodCheckAll() {
-    jQuery('#RodSettingsForm input[name="fws_ROD_Sizes[]"]').each(function(){
+    jQuery('#RodSettingsForm input[name="fws_ROD_Sizes[]"]:not(:disabled)').each(function(){
         jQuery(this).prop('checked', !jQuery(this).prop('checked'));
     });
 }
