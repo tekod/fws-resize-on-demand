@@ -28,7 +28,10 @@ class Hooks {
      */
     public static function OnImageDownsize($Out, $Id, $Size) {
 
-        Services::Log("OnImageDownsize: id:$Id -> '$Size' size.");
+        Services::Log(sprintf(
+            "OnImageDownsize: id:$Id -> %s size.",
+            var_export($Size, true)
+        ));
 
         // skip if already resolved by previous filter
         if ($Out !== false) {
