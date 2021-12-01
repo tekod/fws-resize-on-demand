@@ -28,7 +28,7 @@ class Config {
     public static function Init() {
 
         // load from "options" table
-        $Settings= unserialize(get_option(self::$OptionName)) ?? [];
+        $Settings= unserialize(get_option(self::$OptionName)) ?: [];
 
         // set settings
         self::Set($Settings);
