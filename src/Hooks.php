@@ -52,6 +52,11 @@ class Hooks {
             return false;
         }
 
+        // Skip if $Id does not refer to a valid attachment
+        if ($ImageData === false) {
+            return false;
+        }
+
         // resize now
         return self::Resize($ImageData, $Id, $Size);
     }
