@@ -28,11 +28,6 @@ class Hooks {
      */
     public static function OnImageDownsize($Out, $Id, $Size) {
 
-        Services::Log(sprintf(
-            "OnImageDownsize: id:$Id -> %s size.",
-            var_export($Size, true)
-        ));
-
         // skip if already resolved by previous filter
         if ($Out !== false) {
             Services::Log('Image already resolved by previous filters. Skip.');
@@ -44,10 +39,14 @@ class Hooks {
             return false;
         }
 
+        // log event
+        Services::Log("OnImageDownsize: id:$Id -> '$Size' size.");
+
         // skip if requested size is not registered
         if (!isset(self::GetRegisteredSizes()[$Size])) {
             return false;
         }
+
         // skip if thumbnail already exists
         $ImageData = wp_get_attachment_metadata($Id);
         if (is_array($ImageData) && isset($ImageData['sizes'][$Size])) {
@@ -55,8 +54,9 @@ class Hooks {
             return false;
         }
 
-        // Skip if $Id does not refer to a valid attachment
+        // skip if $Id does not refer to a valid attachment
         if ($ImageData === false) {
+            Services::Log('Attachment data not found. Skip.');
             return false;
         }
 
@@ -88,6 +88,8 @@ class Hooks {
 
         $RegisteredSizes= self::GetRegisteredSizes();
         $SizeData= $RegisteredSizes[$Size];
+
+        // log event
         Services::Log("Resize '$ImageData[file]' to '$Size' size ($SizeData[width]x$SizeData[height])", true);
 
         // first search for higher-resolution sizes to properly create "srcset"
@@ -130,6 +132,8 @@ class Hooks {
         // save image meta, or WP can't see that the thumb exists now
         $ImageData['sizes'][$SizeName]= $Resized;
         wp_update_attachment_metadata($Id, $ImageData);
+
+        // log event
         Services::Log("Successfully created '$Resized[file]'.");
 
         // return the array for displaying the resized image

@@ -4,7 +4,7 @@
  * Plugin Name: FWS Resize-On-Demand
  * Plugin URI:  https://wordpress.org/plugins/fws-resize-on-demand
  * Description: On-demand image resizer for WordPress.
- * Version:     0.3.1
+ * Version:     0.3.2
  * Author:      Miroslav Curcic
  * Author URI:  https://profiles.wordpress.org/tekod
  */
