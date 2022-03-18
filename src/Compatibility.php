@@ -79,7 +79,7 @@ class Compatibility {
     protected static function RegenerateThumbnails() {
 
         add_filter('regenerate_thumbnails_missing_thumbnails', function($sizes, $fullsize_metadata = [], $_instance = null) {
-            return Hooks::DisableSizes($sizes, $fullsize_metadata);
+            return Hooks::RemoveSizesFromAutoResizing($sizes, $fullsize_metadata);
         });
     }
 
