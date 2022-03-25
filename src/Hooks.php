@@ -115,7 +115,7 @@ class Hooks {
      * @param array $SizeData
      * @return array|false
      */
-    protected static function ResizeSingleImage($ImageData, $Id, $SizeName, $SizeData) {
+    protected static function ResizeSingleImage(&$ImageData, $Id, $SizeName, $SizeData) {
 
         // make the new thumb
         $Resized = image_make_intermediate_size(
