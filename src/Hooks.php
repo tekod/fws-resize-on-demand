@@ -7,6 +7,10 @@
 class Hooks {
 
 
+    // current image meta-data
+    protected static $ImageMetaData;
+
+
     /**
      * Initialize monitoring.
      */
@@ -48,20 +52,20 @@ class Hooks {
         }
 
         // skip if thumbnail already exists
-        $ImageData = wp_get_attachment_metadata($Id);
-        if (is_array($ImageData) && isset($ImageData['sizes'][$Size])) {
+        self::$ImageMetaData = wp_get_attachment_metadata($Id);
+        if (is_array(self::$ImageMetaData) && isset(self::$ImageMetaData['sizes'][$Size])) {
             Services::Log('Thumb already exist. Skip.');
             return false;
         }
 
         // skip if $Id does not refer to a valid attachment
-        if ($ImageData === false) {
+        if (self::$ImageMetaData === false) {
             Services::Log('Attachment data not found. Skip.');
             return false;
         }
 
         // resize now
-        return self::Resize($ImageData, $Id, $Size);
+        return self::Resize($Id, $Size);
     }
 
 
@@ -79,43 +83,41 @@ class Hooks {
     /**
      * Resize image.
      *
-     * @param array $ImageData
      * @param int $Id
      * @param string $Size
      * @return array|false
      */
-    protected static function Resize($ImageData, $Id, $Size) {
+    protected static function Resize($Id, $Size) {
 
         $RegisteredSizes= self::GetRegisteredSizes();
         $SizeData= $RegisteredSizes[$Size];
 
         // log event
-        Services::Log("Resize '$ImageData[file]' to '$Size' size ($SizeData[width]x$SizeData[height])", true);
+        Services::Log("Resize '".self::$ImageMetaData['file']."' to '$Size' size ($SizeData[width]x$SizeData[height])", true);
 
         // first search for higher-resolution sizes to properly create "srcset"
         $HighResolutionPattern = '/^' . preg_quote($Size, '/') . '@[1-9]+(\\.[0-9]+)?x$/';
         foreach ($RegisteredSizes as $SubName => $SubData) {
-            if (!isset($ImageData['sizes'][$SubName]) && preg_match($HighResolutionPattern, $SubName)) {
+            if (!isset(self::$ImageMetaData['sizes'][$SubName]) && preg_match($HighResolutionPattern, $SubName)) {
                 Services::Log("Resize to higher-resolution size '$SubName'.");
-                self::ResizeSingleImage($ImageData, $Id, $SubName, $SubData); // resize and ignore result
+                self::ResizeSingleImage($Id, $SubName, $SubData); // resize and ignore result
             }
         }
 
         // now resize image to requested image-size
-        return self::ResizeSingleImage($ImageData, $Id, $Size, $SizeData);
+        return self::ResizeSingleImage($Id, $Size, $SizeData);
     }
 
 
     /**
      * Perform actual image resizing.
      *
-     * @param array $ImageData
      * @param int $Id
      * @param string $SizeName
      * @param array $SizeData
      * @return array|false
      */
-    protected static function ResizeSingleImage($ImageData, $Id, $SizeName, $SizeData) {
+    protected static function ResizeSingleImage($Id, $SizeName, $SizeData) {
 
         // make the new thumb
         $Resized = image_make_intermediate_size(
@@ -130,8 +132,8 @@ class Hooks {
         }
 
         // save image meta, or WP can't see that the thumb exists now
-        $ImageData['sizes'][$SizeName]= $Resized;
-        wp_update_attachment_metadata($Id, $ImageData);
+        self::$ImageMetaData['sizes'][$SizeName]= $Resized;
+        wp_update_attachment_metadata($Id, self::$ImageMetaData);
 
         // log event
         Services::Log("Successfully created '$Resized[file]'.");
