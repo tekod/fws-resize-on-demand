@@ -137,6 +137,7 @@ class Hooks {
 
         // log event
         Services::Log("Successfully created '$Resized[file]'.");
+        Services::Log('ImageMetaData: '.json_encode(self::$ImageMetaData['sizes']));
 
         // return the array for displaying the resized image
         return array(

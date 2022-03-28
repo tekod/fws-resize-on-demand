@@ -264,6 +264,7 @@ class Dashboard {
         }
 
         // check each size
+        $ExistingSizes = array_keys($Meta['sizes']);
         foreach ($Meta['sizes'] as $Key => $SizePack) {
 
             // should we keep that thumbnail?
@@ -286,6 +287,9 @@ class Dashboard {
         // update meta field
         if ($NeedUpdateMeta) {
             wp_update_attachment_metadata($Attachment['post_id'], $Meta);
+            $Removed = implode(',', array_diff($ExistingSizes, array_keys($Meta['sizes'])));
+            $Left = implode(',', array_keys($Meta['sizes']));
+            Services::Log("Deleted thumbnails of post #$Attachment[post_id]: [$Removed], Left: [$Left]");
         }
 
         // return count
