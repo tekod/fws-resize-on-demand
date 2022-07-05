@@ -105,7 +105,7 @@ class Dashboard {
 
         // wrapper and <h1>
         echo '<div class="fws_rod">';
-        echo '<h1>Resize on demand</h1>';
+        echo '<h1>' . __('Resize on demand', 'fws-rod') . '</h1>';
         echo '<hr>';
 
         // render tabs
@@ -129,7 +129,7 @@ class Dashboard {
         foreach(self::$AdminPages as $Slug => $Label) {
             //$URL= admin_url( 'options-general.php?page='.self::$AdminPageSlug.'&tab='.esc_attr($Slug));
             $Class= $CurrentTab === $Slug ? 'nav-tab nav-tab-active' : 'nav-tab';
-            $Tabs .= '<a href="javascript:FwsRodTab(\''.$Slug.'\')" id="fws_rod_tab_'.$Slug.'" class="'.$Class.'">'.esc_html($Label).'</a>';
+            $Tabs .= '<a href="javascript:FwsRodTab(\''.$Slug.'\')" id="fws_rod_tab_'.$Slug.'" class="'.$Class.'">'.esc_html__($Label, 'fws-rod').'</a>';
         }
 
         echo '<nav class="nav-tab-wrapper woo-nav-tab-wrapper">'.$Tabs.'</nav>';
@@ -166,7 +166,7 @@ class Dashboard {
             Config::Save();
 
             // prepare confirmation message
-            set_transient(self::$AdminMsgTransient.'_msg', 'updated-Settings saved.');
+            set_transient(self::$AdminMsgTransient.'_msg', 'updated-' . __('Settings saved.'));
         }
 
         // redirect to viewing context
@@ -207,7 +207,7 @@ class Dashboard {
             }
 
             // prepare confirmation message
-            set_transient(self::$AdminMsgTransient.'_msg', "updated-Removed $TotalCount thumbnails.");
+            set_transient(self::$AdminMsgTransient.'_msg', 'updated-' . sprintf(__('Removed %n thumbnails.', 'fws-rod'), $TotalCount));
         }
 
         // redirect to viewing context
@@ -234,7 +234,7 @@ class Dashboard {
             Config::Save();
 
             // prepare confirmation message
-            set_transient(self::$AdminMsgTransient.'_msg', 'updated-Settings saved.');
+            set_transient(self::$AdminMsgTransient.'_msg', 'updated-' . __('Settings saved.'));
         }
 
         // redirect to viewing context
@@ -306,11 +306,11 @@ class Dashboard {
     protected static function ValidateSubmit($Action) {
 
         if (!wp_verify_nonce($_POST[Config::$OptionName.'_nonce'], $Action)) {
-            set_transient(self::$AdminMsgTransient.'_msg', 'error-Session expired, please try again.');
+            set_transient(self::$AdminMsgTransient.'_msg', 'error-' . __('Session expired, please try again.', 'fws-rod'));
             return false;
         }
         if (!isset($_POST['_wp_http_referer'])) {
-            set_transient(self::$AdminMsgTransient.'_msg', 'error-Missing target.');
+            set_transient(self::$AdminMsgTransient.'_msg', 'error-' . __('Missing target.', 'fws-rod'));
             return false;
         }
         return true;

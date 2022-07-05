@@ -63,12 +63,12 @@
         font-style: italic;
     }
 </style>
-<h3>Apply on-demand resizing on these image sizes:</h3>
+<h3><?=esc_html__('Apply on-demand resizing on these image sizes:', 'fws-rod')?></h3>
 <form id="RodSettingsForm" action="admin-post.php" method="post">
     <table>
         <tr>
             <td colspan="2">
-                <a href="javascript:FwsRodCheckAll();">Check all</a>
+                <a href="javascript:FwsRodCheckAll();"><?=esc_html__('Check all', 'fws-rod')?></a>
             </td>
         </tr>
         <?php foreach($Sizes as $Key => $Size) { ?>
@@ -81,12 +81,12 @@
                 if (in_array($Key, $ForceHandleSizes)) {
                     $Checked= ' checked';
                     $Disabled= ' disabled';
-                    $Notice= 'This size has been enabled programmatically.';
+                    $Notice= esc_html__('This size has been enabled programmatically.', 'fws-rod');
                 }
                 if (in_array($Key, $ForceDisableSizes)) {
                     $Checked= '';
                     $Disabled= ' disabled';
-                    $Notice= 'This size has been disabled programmatically.';
+                    $Notice= esc_html__('This size has been disabled programmatically.', 'fws-rod');
                 }
             ?>
             <th>
@@ -109,7 +109,7 @@
         <?php } ?>
     </table>
     <div style="padding:1em 0 0 1em; color:gray">
-        Total: <?php echo count($Sizes); ?> registered sizes
+        <?=esc_html(sprintf(__('Total: %d registered sizes', 'fws-rod'), count($Sizes)))?>
     </div>
     <?php submit_button(); ?>
     <input type="hidden" name="action" value="<?php echo $Action; ?>">
