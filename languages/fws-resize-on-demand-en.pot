@@ -1,0 +1,88 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: fws-resize-on-demand\n"
+"POT-Creation-Date: 2022-07-06 01:26+0200\n"
+"PO-Revision-Date: 2022-07-06 01:27+0200\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.3\n"
+"X-Poedit-Basepath: ..\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-KeywordsList: __;_e;esc_html__\n"
+"X-Poedit-SearchPath-0: languages\n"
+"X-Poedit-SearchPath-1: .\n"
+
+#: src/Dashboard.php:23
+msgid "Introduction"
+msgstr ""
+
+#: src/Dashboard.php:24
+msgid "Settings"
+msgstr ""
+
+#: src/Dashboard.php:25
+msgid "Utilities"
+msgstr ""
+
+#: src/Dashboard.php:92
+msgid "You do not have sufficient permissions to access this page."
+msgstr ""
+
+#: src/Dashboard.php:108
+msgid "Resize on demand"
+msgstr ""
+
+#: src/Dashboard.php:210
+msgid "Removed %n thumbnails."
+msgstr ""
+
+#: src/Dashboard.php:309
+msgid "Session expired, please try again."
+msgstr ""
+
+#: src/Dashboard.php:313
+msgid "Missing target."
+msgstr ""
+
+#: src/templates/settings.php:66
+msgid "Apply on-demand resizing on these image sizes:"
+msgstr ""
+
+#: src/templates/settings.php:71
+msgid "Check all"
+msgstr ""
+
+#: src/templates/settings.php:84
+msgid "This size has been enabled programmatically."
+msgstr ""
+
+#: src/templates/settings.php:89
+msgid "This size has been disabled programmatically."
+msgstr ""
+
+#: src/templates/settings.php:112
+#, php-format
+msgid "Total: %d registered sizes"
+msgstr ""
+
+#: src/templates/utils.php:24
+msgid ""
+"Delete all thumbnails at sizes that we handle so they can be re-created on "
+"demand."
+msgstr ""
+
+#: src/templates/utils.php:32
+msgid "Enable debug logging to trace sources of image resizing."
+msgstr ""
+
+#: src/templates/utils.php:35
+msgid "Enable debug logging"
+msgstr ""
+
+#: src/templates/utils.php:42
+msgid "Log file is located at:"
+msgstr ""
