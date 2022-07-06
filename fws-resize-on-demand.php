@@ -4,9 +4,12 @@
  * Plugin Name: FWS Resize-On-Demand
  * Plugin URI:  https://wordpress.org/plugins/fws-resize-on-demand
  * Description: On-demand image resizer for WordPress.
- * Version:     0.3.3
+ * Version:     0.3.4
  * Author:      Miroslav Curcic
  * Author URI:  https://profiles.wordpress.org/tekod
+ * Text Domain: fws-rod
+ * Domain Path: /languages
+ * Requires at least: 4.8
  */
 
 defined('ABSPATH') or die();
@@ -15,7 +18,7 @@ defined('ABSPATH') or die();
 // constants
 define('FWS_ROD_PLUGINBASENAME', plugin_basename(__FILE__));
 define('FWS_ROD_DIR', __DIR__);
-define('FWS_ROD_VERSION', '0.3.3');
+define('FWS_ROD_VERSION', '0.3.4');
 
 
 // load classes
