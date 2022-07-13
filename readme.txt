@@ -1,9 +1,9 @@
 === FWS On-Demand-Resizer ===
 Contributors: tekod
 Tags: images, smart, resize, resizing, resizer, thumbnails
-Requires at least: 4.7
-Tested up to: 5.8
-Stable tag: 0.3.3
+Requires at least: 4.8
+Tested up to: 6.0
+Stable tag: 0.3.5
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html

@@ -15,15 +15,8 @@ class Dashboard {
     // transient key
     protected static $AdminMsgTransient= 'fws_resize_on_demand_admin';
 
-    // settings page slug
-    protected static $AdminPageSlug= 'fws-resize-on-demand';
-
     // tabs
-    protected static $AdminPages= [
-        'init'    => 'Introduction',
-        'settings'=> 'Settings',
-        'utils'   => 'Utilities',
-    ];
+    protected $AdminPages= [];
 
 
     /**
@@ -57,6 +50,7 @@ class Dashboard {
     }
 
 
+
     /**
      * Insert custom content in area under plugin description.
      *
@@ -65,7 +59,7 @@ class Dashboard {
      */
     public function SettingsLinks($Links) {
 
-        $Content= '<a href="options-general.php?page=fws-resize-on-demand">'.__('Settings').'</a>';
+        $Content= '<a href="options-general.php?page=fws-resize-on-demand">'.__('Settings', 'fws-resize-on-demand').'</a>';
         array_push($Links, $Content);
         return $Links;
     }
@@ -83,36 +77,52 @@ class Dashboard {
 
 
     /**
+     * Initialize dashboard tabs.
+     */
+    protected function PrepareAdminPages() {
+
+        $Pages = [
+            'init'    => __('Introduction', 'fws-resize-on-demand'),
+            'settings'=> __('Settings', 'fws-resize-on-demand'),
+            'utils'   => __('Utilities', 'fws-resize-on-demand'),
+        ];
+        $this->AdminPages = apply_filters('fws_rod_admin_pages', $Pages);
+    }
+
+
+    /**
      * Echo dashboard content.
      */
     public function RenderDashboard() {
 
         // validate access
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die(__('You do not have sufficient permissions to access this page.', 'fws-rod'));
+            wp_die(__('You do not have sufficient permissions to access this page.', 'fws-resize-on-demand'));
         }
 
         // find current tab
         $CurrentTab= sanitize_key($_REQUEST['tab'] ?? '');
+        // initialize admin pages
+        $this->PrepareAdminPages();
         // get from stored tab focus
-        if (!isset(self::$AdminPages[$CurrentTab])) {
+        if (!isset($this->AdminPages[$CurrentTab])) {
             $CurrentTab= get_transient(self::$AdminMsgTransient.'_tab');
         }
         // start from first tab
-        if (!isset(self::$AdminPages[$CurrentTab])) {
-            $CurrentTab= array_keys(self::$AdminPages)[0];
+        if (!isset($this->AdminPages[$CurrentTab])) {
+            $CurrentTab= array_keys($this->AdminPages)[0];
         }
 
         // wrapper and <h1>
         echo '<div class="fws_rod">';
-        echo '<h1>' . __('Resize on demand', 'fws-rod') . '</h1>';
+        echo '<h1>' . __('Resize on demand', 'fws-resize-on-demand') . '</h1>';
         echo '<hr>';
 
         // render tabs
-        self::RenderTabs($CurrentTab);
+        $this->RenderTabs($CurrentTab);
 
         // render tab contents
-        self::RenderTabContents($CurrentTab);
+        $this->RenderTabContents($CurrentTab);
 
         // close wrapper
         echo '</div>';
@@ -123,13 +133,12 @@ class Dashboard {
      *
      * @param string $CurrentTab
      */
-    protected static function RenderTabs($CurrentTab) {
+    protected function RenderTabs($CurrentTab) {
 
         $Tabs= '';
-        foreach(self::$AdminPages as $Slug => $Label) {
-            //$URL= admin_url( 'options-general.php?page='.self::$AdminPageSlug.'&tab='.esc_attr($Slug));
+        foreach($this->AdminPages as $Slug => $Label) {
             $Class= $CurrentTab === $Slug ? 'nav-tab nav-tab-active' : 'nav-tab';
-            $Tabs .= '<a href="javascript:FwsRodTab(\''.$Slug.'\')" id="fws_rod_tab_'.$Slug.'" class="'.$Class.'">'.esc_html__($Label, 'fws-rod').'</a>';
+            $Tabs .= '<a href="javascript:FwsRodTab(\''.$Slug.'\')" id="fws_rod_tab_'.$Slug.'" class="'.$Class.'">'.esc_html($Label).'</a>';
         }
 
         echo '<nav class="nav-tab-wrapper woo-nav-tab-wrapper">'.$Tabs.'</nav>';
@@ -137,11 +146,18 @@ class Dashboard {
     }
 
 
-    protected static function RenderTabContents($CurrentTab) {
+    /**
+     * Partial - echo content of tabs.
+     *
+     * @param $CurrentTab
+     */
+    protected function RenderTabContents($CurrentTab) {
 
-        foreach(array_keys(self::$AdminPages) as $Slug) {
+        foreach(array_keys($this->AdminPages) as $Slug) {
             echo '<div id="fws_rod_tabc_'.$Slug.'" class="fws_rod_tab" style="display:'.($Slug === $CurrentTab ? 'block' : 'none').'">';
-            include "templates/$Slug.php";  // whitelisted slug
+            if (apply_filters('fws_rod_render_tab', null, $Slug) === null) {
+                include "templates/$Slug.php";  // whitelisted slug
+            }
             echo '</div>';
         }
     }
@@ -150,7 +166,7 @@ class Dashboard {
     /**
      * Handle saving settings.
      */
-    public static function OnActionSaveSettings() {
+    public function OnActionSaveSettings() {
 
         // store tab focus
         set_transient(self::$AdminMsgTransient.'_tab', 'settings');
@@ -166,7 +182,7 @@ class Dashboard {
             Config::Save();
 
             // prepare confirmation message
-            set_transient(self::$AdminMsgTransient.'_msg', 'updated-' . __('Settings saved.'));
+            set_transient(self::$AdminMsgTransient.'_msg', 'updated-' . __('Settings saved.', 'fws-resize-on-demand'));
         }
 
         // redirect to viewing context
@@ -207,7 +223,7 @@ class Dashboard {
             }
 
             // prepare confirmation message
-            set_transient(self::$AdminMsgTransient.'_msg', 'updated-' . sprintf(__('Removed %n thumbnails.', 'fws-rod'), $TotalCount));
+            set_transient(self::$AdminMsgTransient.'_msg', 'updated-' . sprintf(__('Removed %n thumbnails.', 'fws-resize-on-demand'), $TotalCount));
         }
 
         // redirect to viewing context
@@ -234,7 +250,7 @@ class Dashboard {
             Config::Save();
 
             // prepare confirmation message
-            set_transient(self::$AdminMsgTransient.'_msg', 'updated-' . __('Settings saved.'));
+            set_transient(self::$AdminMsgTransient.'_msg', 'updated-' . __('Settings saved.', 'fws-resize-on-demand'));
         }
 
         // redirect to viewing context
@@ -306,11 +322,11 @@ class Dashboard {
     protected static function ValidateSubmit($Action) {
 
         if (!wp_verify_nonce($_POST[Config::$OptionName.'_nonce'], $Action)) {
-            set_transient(self::$AdminMsgTransient.'_msg', 'error-' . __('Session expired, please try again.', 'fws-rod'));
+            set_transient(self::$AdminMsgTransient.'_msg', 'error-' . __('Session expired, please try again.', 'fws-resize-on-demand'));
             return false;
         }
         if (!isset($_POST['_wp_http_referer'])) {
-            set_transient(self::$AdminMsgTransient.'_msg', 'error-' . __('Missing target.', 'fws-rod'));
+            set_transient(self::$AdminMsgTransient.'_msg', 'error-' . __('Missing target.', 'fws-resize-on-demand'));
             return false;
         }
         return true;

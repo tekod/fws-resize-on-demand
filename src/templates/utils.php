@@ -21,25 +21,25 @@
 </style>
 <div>
     <form action="admin-post.php" method="post" class="utils-form">
-        <?=esc_html__('Delete all thumbnails at sizes that we handle so they can be re-created on demand.', 'fws-rod')?>
-        <?php submit_button(__('Delete'), 'primary large', 'submit'); ?>
+        <?=esc_html__('Delete all thumbnails at sizes that we handle so they can be re-created on demand.', 'fws-resize-on-demand')?>
+        <?php submit_button(__('Delete', 'fws-resize-on-demand'), 'primary large', 'submit'); ?>
         <input type="hidden" name="action" value="<?php echo esc_attr($ActionDel); ?>">
         <?php wp_nonce_field($ActionDel, $OptionName.'_nonce', false); ?>
         <input type="hidden" name="_wp_http_referer" value="<?php echo esc_attr($RedirectURL); ?>">
     </form>
 
     <form action="admin-post.php" method="post" class="utils-form">
-        <?=esc_html__('Enable debug logging to trace sources of image resizing.', 'fws-rod')?>
+        <?=esc_html__('Enable debug logging to trace sources of image resizing.', 'fws-resize-on-demand')?>
         <div style="padding:2em 0 0 0">
             <input type="checkbox" name="fws_ROD_Logging" id="fws_ROD_Logging" value="1"<?php checked($IsLoggingEnabled); ?>>
-            <label for="fws_ROD_Logging"><?=esc_html__('Enable debug logging', 'fws-rod')?></label>
+            <label for="fws_ROD_Logging"><?=esc_html__('Enable debug logging', 'fws-resize-on-demand')?></label>
         </div>
-        <?php submit_button(__('Save Changes'), 'primary large', 'submit'); ?>
+        <?php submit_button(__('Save Changes', 'fws-resize-on-demand'), 'primary large', 'submit'); ?>
         <input type="hidden" name="action" value="<?php echo esc_attr($ActionLog); ?>">
         <?php wp_nonce_field($ActionLog, $OptionName.'_nonce', false); ?>
         <input type="hidden" name="_wp_http_referer" value="<?php echo esc_attr($RedirectURL); ?>">
         <div style="padding: 1em 0 2em 0">
-            <?=esc_html__('Log file is located at:', 'fws-rod')?>
+            <?=esc_html__('Log file is located at:', 'fws-resize-on-demand')?>
             <br>
             <?=esc_html($LogFilePath)?>
         </div>
