@@ -47,7 +47,8 @@ class Hooks {
         Services::Log("OnImageDownsize: id:$Id -> '$Size' size.");
 
         // skip if requested size is not registered
-        if (!isset(self::GetRegisteredSizes()[$Size])) {
+        $SizeData= self::GetRegisteredSizes()[$Size] ?? null;
+        if (!$SizeData) {
             return false;
         }
 
@@ -64,7 +65,15 @@ class Hooks {
             return false;
         }
 
+        // skip on upscale
+        $Dim= image_resize_dimensions(intval(self::$ImageMetaData['width']), intval(self::$ImageMetaData['height']), $SizeData['width'], $SizeData['height'], $SizeData['crop']);
+        if (!$Dim || $Dim[6] < $Dim[4] || $Dim[7] < $Dim[5]) {
+            Services::Log("Upscale attempt. Skip.");
+            return false;
+        }
+
         // resize now
+        Services::Log('resizing: ' . json_encode($Dim));
         return self::Resize($Id, $Size);
     }
 
