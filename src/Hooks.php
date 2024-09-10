@@ -1,14 +1,10 @@
-<?php namespace FWS\ROD;
+<?php namespace Tekod\ROD;
 
 /**
  * Class Hooks
- * @package FWS\ROD
+ * @package Tekod\ROD
  */
 class Hooks {
-
-
-    // current image meta-data
-    protected static $ImageMetaData;
 
 
     /**
@@ -16,9 +12,13 @@ class Hooks {
      */
     public static function Init() {
 
+        // catch image resizing events
         add_filter('image_downsize', [__CLASS__, 'OnImageDownsize'], 10, 3);
         add_filter('intermediate_image_sizes_advanced', [__CLASS__, 'RemoveSizesFromAutoResizing'], 10, 3);
         add_filter('image_size_names_choose', [__CLASS__, 'DisableNameChoose'], 10, 1);
+
+        // adjust jpeg quality
+        add_filter('jpeg_quality', [__CLASS__, 'OnJpegQuality'], 10, 1);
     }
 
 
@@ -46,115 +46,9 @@ class Hooks {
         // log event
         Services::Log("OnImageDownsize: id:$Id -> '$Size' size.");
 
-        // skip if requested size is not registered
-        $SizeData= self::GetRegisteredSizes()[$Size] ?? null;
-        if (!$SizeData) {
-            return false;
-        }
-
-        // skip if thumbnail already exists
-        self::$ImageMetaData = wp_get_attachment_metadata($Id);
-        if (is_array(self::$ImageMetaData) && isset(self::$ImageMetaData['sizes'][$Size])) {
-            Services::Log('Thumb already exist. Skip.');
-            return false;
-        }
-
-        // skip if $Id does not refer to a valid attachment
-        if (self::$ImageMetaData === false) {
-            Services::Log('Attachment data not found. Skip.');
-            return false;
-        }
-
-        // skip on upscale
-        $Dim= image_resize_dimensions(intval(self::$ImageMetaData['width']), intval(self::$ImageMetaData['height']), $SizeData['width'], $SizeData['height'], $SizeData['crop']);
-        if (!$Dim || $Dim[6] < $Dim[4] || $Dim[7] < $Dim[5]) {
-            Services::Log("Upscale attempt. Skip.");
-            return false;
-        }
-
-        // resize now
-        Services::Log('resizing: ' . json_encode($Dim));
-        return self::Resize($Id, $Size);
-    }
-
-
-    /**
-     * Return list of registered image sizes.
-     *
-     * @return array
-     */
-    protected static function GetRegisteredSizes() {
-
-        return wp_get_registered_image_subsizes();
-    }
-
-
-    /**
-     * Resize image.
-     *
-     * @param int $Id
-     * @param string $Size
-     * @return array|false
-     */
-    protected static function Resize($Id, $Size) {
-
-        $RegisteredSizes= self::GetRegisteredSizes();
-        $SizeData= $RegisteredSizes[$Size];
-
-        // log event
-        Services::Log("Resize '".self::$ImageMetaData['file']."' to '$Size' size ($SizeData[width]x$SizeData[height])", true);
-
-        // first search for higher-resolution sizes to properly create "srcset"
-        $HighResolutionPattern = '/^' . preg_quote($Size, '/') . '@[1-9]+(\\.[0-9]+)?x$/';
-        foreach ($RegisteredSizes as $SubName => $SubData) {
-            if (!isset(self::$ImageMetaData['sizes'][$SubName]) && preg_match($HighResolutionPattern, $SubName)) {
-                Services::Log("Resize to higher-resolution size '$SubName'.");
-                self::ResizeSingleImage($Id, $SubName, $SubData); // resize and ignore result
-            }
-        }
-
-        // now resize image to requested image-size
-        return self::ResizeSingleImage($Id, $Size, $SizeData);
-    }
-
-
-    /**
-     * Perform actual image resizing.
-     *
-     * @param int $Id
-     * @param string $SizeName
-     * @param array $SizeData
-     * @return array|false
-     */
-    protected static function ResizeSingleImage($Id, $SizeName, $SizeData) {
-
-        // make the new thumb
-        $Resized = image_make_intermediate_size(
-            get_attached_file($Id),
-            $SizeData['width'],
-            $SizeData['height'],
-            $SizeData['crop']
-        );
-        if (!$Resized) {
-            Services::Log('Failed to resize. Exit.');
-            return false;   // resizing failed
-        }
-
-        // save image meta, or WP can't see that the thumb exists now
-        self::$ImageMetaData['sizes'][$SizeName]= $Resized;
-        wp_update_attachment_metadata($Id, self::$ImageMetaData);
-
-        // log event
-        Services::Log("Successfully created '$Resized[file]'.");
-        Services::Log('ImageMetaData: '.json_encode(self::$ImageMetaData['sizes']));
-
-        // return the array for displaying the resized image
-        return array(
-            dirname(wp_get_attachment_url($Id)) . '/' . $Resized['file'],
-            $Resized['width'],
-            $Resized['height'],
-            true
-        );
+        // try to perform downsizing
+        require_once __DIR__.'/Image.php';
+        return Image::Downsize($Id, $Size);
     }
 
 
@@ -185,9 +79,27 @@ class Hooks {
      */
     public static function DisableNameChoose($Names) {
 
+        return ['thumbnail' => __('Thumbnail')];
+
         return did_action('add_attachment')
             ? ['thumbnail' => __('Thumbnail')]
             : $Names;
+    }
+
+
+    /**
+     * Apply custom jpeg quality.
+     *
+     * @param $Quality
+     * @return void
+     */
+    public static function OnJpegQuality($Quality) {
+
+        $CustomJpegQuality= Services::GetCustomJpegQuality();
+        if ($CustomJpegQuality !== null) {
+            $Quality= $CustomJpegQuality;
+        }
+        return $Quality;
     }
 
 }

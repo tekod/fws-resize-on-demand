@@ -1,0 +1,65 @@
+.fws_rod {}
+.fws_rod h1 {
+	padding-top: 1em;
+}
+.fws_rod h3 {
+	padding-top: 2em;
+}
+.fws_rod form {
+	border: 1px solid silver;
+	background-color: #f8f8f8;
+	padding: 1em 2em;
+	width: 80%;
+	max-width: 60em;
+	margin-top: 3em;
+	margin-left: 3em;
+}
+.fws_rod form table {
+	width: 100%;
+	line-height: 1em;
+	border-collapse: collapse;
+}
+.fws_rod form table th, .fws_rod form table td {
+	padding: 0.7em 1em;
+	border-bottom: 1px solid #ddd;
+}
+.fws_rod form table th {
+	text-align: right;
+	vertical-align: top;
+	width: 3em;
+}
+.fws_rod form table th input[type="checkbox"] {
+	margin-top: 1px;
+}
+.fws_rod form table th input[type="checkbox"]:disabled {
+	cursor: not-allowed;
+}
+.fws_rod form table label {
+	margin-right: 4em;
+}
+.fws_rod form table span {
+	color: gray;
+	padding-left: 1em;
+	font-size: 90%;
+}
+.fws_rod form table p {
+	display: inline-block;
+	margin: 0;
+	vertical-align: middle;
+	color: gray;
+	font-style: italic;
+}
+.fws_rod .utils-form {
+	margin: 3em 0 0 2em;
+	width: 80%;
+	max-width: 50em;
+	border: 1px solid silver;
+	background-color: #f8f8f8;
+	padding: 3em 0 0 3em;
+}
+.fws_rod .button-run-wrap .submit .button {
+	vertical-align: middle;
+	margin-right: 2em;
+}
+
+

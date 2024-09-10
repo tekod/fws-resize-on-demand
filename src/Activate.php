@@ -1,4 +1,4 @@
-<?php namespace FWS\ROD;
+<?php namespace Tekod\ROD;
 
 
 class Activate {

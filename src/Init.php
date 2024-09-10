@@ -1,8 +1,8 @@
-<?php namespace FWS\ROD;
+<?php namespace Tekod\ROD;
 
 /**
  * Class Init
- * @package FWS\ROD
+ * @package Tekod\ROD
  */
 class Init {
 

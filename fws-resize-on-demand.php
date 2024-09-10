@@ -4,7 +4,7 @@
  * Plugin Name: FWS Resize-On-Demand
  * Plugin URI:  https://wordpress.org/plugins/fws-resize-on-demand
  * Description: On-demand image resizer for WordPress.
- * Version:     0.4.0
+ * Version:     0.5.0
  * Author:      Miroslav Curcic
  * Author URI:  https://profiles.wordpress.org/tekod
  * Text Domain: fws-resize-on-demand
@@ -16,9 +16,9 @@ defined('ABSPATH') or die();
 
 
 // constants
-define('FWS_ROD_PLUGINBASENAME', plugin_basename(__FILE__));
-define('FWS_ROD_DIR', __DIR__);
-define('FWS_ROD_VERSION', '0.4.0');
+define('TEKOD_ROD_PLUGINBASENAME', plugin_basename(__FILE__));
+define('TEKOD_ROD_DIR', __DIR__);
+define('TEKOD_ROD_VERSION', '0.5.0');
 
 
 // load classes
@@ -29,15 +29,15 @@ require __DIR__.'/src/Init.php';
 
 // setup plugin activator and deactivator
 function activate_fws_rod_plugin() {
-    FWS\ROD\Activate::activate();
+    Tekod\ROD\Activate::activate();
 }
 register_activation_hook(__FILE__, 'activate_fws_rod_plugin');
 
 function deactivate_fws_rod_plugin() {
-    FWS\ROD\Deactivate::deactivate();
+    Tekod\ROD\Deactivate::deactivate();
 }
 register_deactivation_hook(__FILE__, 'deactivate_fws_rod_plugin');
 
 
 // start plugin
-FWS\ROD\Init::InitServices();
+Tekod\ROD\Init::InitServices();

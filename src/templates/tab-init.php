@@ -36,8 +36,10 @@
         Typically you will enable it for all sizes.
     </p>
     <p>
-        Button "Delete" on "Utilities" tab will remove all thumbnails for sizes that are handled by this plugin. <br>
-        That will significaly reduce size of your "uploads" directory allowing new thumbnails to be recreated on demand.
+        Button "Delete" on "Utilities" tab will remove all thumbnails for sizes that are handled by this plugin.<br>
+        That will significaly reduce size of your "uploads" directory allowing new thumbnails to be recreated on demand.<br>
+        <br>
+        Button "Regenerate all thumbnails" will remove existing and create new thumbnails for all your uploaded images.
     </p>
     <p>
         Hooks:<br>

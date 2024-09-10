@@ -1,9 +1,9 @@
-<?php namespace FWS\ROD;
+<?php namespace Tekod\ROD;
 
 
 /**
  * Class Config
- * @package FWS\ROD
+ * @package Tekod\ROD
  */
 class Config {
 
@@ -14,6 +14,7 @@ class Config {
     protected static $DefaultSettings= [
         'HandleSizes'=> [], // array of size names
         'EnableLogging'=> false,
+        'JpegCompression' => [],
     ];
 
     // "options" table identifier

@@ -1,8 +1,8 @@
-<?php namespace FWS\ROD;
+<?php namespace Tekod\ROD;
 
 /**
  * Class Services
- * @package FWS\ROD
+ * @package Tekod\ROD
  */
 class Services {
 
@@ -39,6 +39,21 @@ class Services {
             self::MaybeSaveSettings(self::$SizesToHandle, $Settings['HandleSizes']);
         }
         return self::$SizesToHandle;
+    }
+
+
+    /**
+     * Return custom jpeg quality or null if disabled.
+     *
+     * @return int|null
+     */
+    public static function GetCustomJpegQuality() {
+
+        $Settings= Config::Get();
+        $JpegSettings= $Settings['JpegCompression'] ?? [];
+        $Enabled= $JpegSettings['Enabled'] ?? false;
+        $Quality= intval($JpegSettings['Quality'] ?? 82);
+        return $Enabled ? $Quality : null;
     }
 
 

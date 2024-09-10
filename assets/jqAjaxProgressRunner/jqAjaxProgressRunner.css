@@ -1,0 +1,39 @@
+.jq_apr {
+    display: none;
+    vertical-align: middle;
+}
+.jq_apr .progress {
+    display:inline-block;
+    position: relative;
+    height: 24px;
+    width: 200px;
+    background-color: #ddd;
+    border: 1px solid #888;
+    border-radius: 8px;
+    vertical-align: middle;
+}
+.jq_apr .progress-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 24px;
+    background-color: #0cb;
+    border-radius: 8px;
+    -webkit-transition: all .8s ease-in-out;
+    transition: all .8s ease-in-out;
+}
+.jq_apr .progress-text {
+    position: relative;
+    text-align: center;
+    padding: 2px 0;
+    color: #000;
+}
+.jq_apr .run-report {
+    margin-left: 1em;
+    vertical-align: middle;
+    color: #060;
+}
+.jq_apr .run-report.error {
+    color: #800;
+}

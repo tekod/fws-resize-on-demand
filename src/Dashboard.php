@@ -1,22 +1,21 @@
-<?php namespace FWS\ROD;
+<?php namespace Tekod\ROD;
 
 /**
  * Class Dashboard
- * @package FWS\ROD
+ * @package Tekod\ROD
  */
 class Dashboard {
 
 
     // form actions
-    public static $ActionSettings= 'fws_rod_settings';
+    public static $ActionSettingsSizes= 'fws_rod_settings_sizes';
+    public static $ActionSettingsJpeg= 'fws_rod_settings_jpeg';
     public static $ActionDeleteThumbs= 'fws_rod_delete_thumbs';
+    public static $ActionRegenThumbs= 'fws_rod_regen_thumbs';
     public static $ActionEnableLogging= 'fws_rod_enable_logging';
 
     // transient key
     protected static $AdminMsgTransient= 'fws_resize_on_demand_admin';
-
-    // tabs
-    protected $AdminPages= [];
 
 
     /**
@@ -36,16 +35,18 @@ class Dashboard {
                 'fws-resize-on-demand',
                 [$Dashboard,'RenderDashboard']
             );
-            add_action( "load-$PageId", [__CLASS__, 'PrepareAdminNotices']);
+            add_action( "load-$PageId", [__CLASS__, 'OnLoad']);
         });
 
         // register handlers
-        add_action('admin_post_'.static::$ActionSettings, [__CLASS__, 'OnActionSaveSettings']);
-        add_action('admin_post_'.static::$ActionDeleteThumbs, [__CLASS__, 'OnActionDeleteThumbs']);
+        add_action('admin_post_'.static::$ActionSettingsSizes, [__CLASS__, 'OnActionSaveSettingsSizes']);
+        add_action('admin_post_'.static::$ActionSettingsJpeg, [__CLASS__, 'OnActionSaveSettingsJpeg']);
         add_action('admin_post_'.static::$ActionEnableLogging, [__CLASS__, 'OnActionEnableLogging']);
 
         // catch other admin hooks
-        add_filter("plugin_action_links_".FWS_ROD_PLUGINBASENAME, [$Dashboard, 'SettingsLinks']);
+        add_filter("plugin_action_links_".TEKOD_ROD_PLUGINBASENAME, [$Dashboard, 'SettingsLinks']);
+
+        // setup hooks
         add_action('init', [$Dashboard, 'OnInit']);
     }
 
@@ -66,27 +67,30 @@ class Dashboard {
 
 
     /**
-     * Enqueue CSS and javascript files.
+     * Setup hook on "init" action.
      */
     public function OnInit() {
 
-        $PluginURL= plugin_dir_url(FWS_ROD_DIR.'/.');
-        //wp_enqueue_style( 'FWSStyle', $PluginURL.'assets/style.css' );
-        wp_enqueue_script( 'FWSScript', $PluginURL.'assets/scripts.js', [], FWS_ROD_VERSION);
+        // register ajax handlers
+        add_action('wp_ajax_'.self::$ActionDeleteThumbs, [$this, 'onAjaxDeleteThumbs']);
+        add_action('wp_ajax_'.self::$ActionRegenThumbs, [$this, 'onAjaxRegenThumbs']);
     }
 
 
     /**
-     * Initialize dashboard tabs.
+     * Enqueue CSS and javascript files.
      */
-    protected function PrepareAdminPages() {
+    public static function OnLoad() {
 
-        $Pages = [
-            'init'    => __('Introduction', 'fws-resize-on-demand'),
-            'settings'=> __('Settings', 'fws-resize-on-demand'),
-            'utils'   => __('Utilities', 'fws-resize-on-demand'),
-        ];
-        $this->AdminPages = apply_filters('fws_rod_admin_pages', $Pages);
+        // enqueue
+        $PluginURL= plugin_dir_url(TEKOD_ROD_DIR.'/.');
+        wp_enqueue_style('jqAjaxProgressRunnerCSS', $PluginURL.'assets/jqAjaxProgressRunner/jqAjaxProgressRunner.css', [], TEKOD_ROD_VERSION);
+        wp_enqueue_script('jqAjaxProgressRunnerJS', $PluginURL.'assets/jqAjaxProgressRunner/jqAjaxProgressRunner.js', [], TEKOD_ROD_VERSION);
+        wp_enqueue_style('RODStyle', $PluginURL.'assets/admin-style.css', [], TEKOD_ROD_VERSION);
+        wp_enqueue_script('RODScript', $PluginURL.'assets/admin-scripts.js', [], TEKOD_ROD_VERSION);
+
+        // capture notices
+        self::PrepareAdminNotices();
     }
 
 
@@ -100,79 +104,48 @@ class Dashboard {
             wp_die(__('You do not have sufficient permissions to access this page.', 'fws-resize-on-demand'));
         }
 
-        // find current tab
-        $CurrentTab= sanitize_key($_REQUEST['tab'] ?? '');
-        // initialize admin pages
-        $this->PrepareAdminPages();
-        // get from stored tab focus
-        if (!isset($this->AdminPages[$CurrentTab])) {
-            $CurrentTab= get_transient(self::$AdminMsgTransient.'_tab');
-        }
-        // start from first tab
-        if (!isset($this->AdminPages[$CurrentTab])) {
-            $CurrentTab= array_keys($this->AdminPages)[0];
-        }
+        // prepare template vars
+        $Tabs = $this->GetAvailableTabs();
+        $CurrentTab = $this->GetCurrentTab($Tabs);
 
-        // wrapper and <h1>
-        echo '<div class="fws_rod">';
-        echo '<h1>' . __('Resize on demand', 'fws-resize-on-demand') . '</h1>';
-        echo '<hr>';
-
-        // render tabs
-        $this->RenderTabs($CurrentTab);
-
-        // render tab contents
-        $this->RenderTabContents($CurrentTab);
-
-        // close wrapper
-        echo '</div>';
+        // render page template
+        include __DIR__ . '/templates/main.php';
     }
 
     /**
-     * Partial - echo tabs section.
+     * Return list of available tabs.
+     */
+    protected function GetAvailableTabs() {
+
+        $Pages = [
+            'init'    => __('Introduction', 'fws-resize-on-demand'),
+            'settings'=> __('Settings', 'fws-resize-on-demand'),
+            'utils'   => __('Utilities', 'fws-resize-on-demand'),
+        ];
+        return apply_filters('fws_rod_admin_pages', $Pages);
+    }
+
+
+    /**
+     * Return slug of current tab.
      *
-     * @param string $CurrentTab
+     * @param $Tabs array
+     * @return string
      */
-    protected function RenderTabs($CurrentTab) {
+    protected function GetCurrentTab($Tabs) {
 
-        $Tabs= '';
-        foreach($this->AdminPages as $Slug => $Label) {
-            $Class= $CurrentTab === $Slug ? 'nav-tab nav-tab-active' : 'nav-tab';
-            $Tabs .= '<a href="javascript:FwsRodTab(\''.$Slug.'\')" id="fws_rod_tab_'.$Slug.'" class="'.$Class.'">'.esc_html($Label).'</a>';
-        }
-
-        echo '<nav class="nav-tab-wrapper woo-nav-tab-wrapper">'.$Tabs.'</nav>';
-        echo '<div style="clear:both"></div>';
+        $Tab = $_REQUEST['tab'] ?? $_COOKIE['fws_rod_tab'] ?? '';
+        return isset($Tabs[$Tab]) ? $Tab : array_keys($Tabs)[0];
     }
 
 
     /**
-     * Partial - echo content of tabs.
-     *
-     * @param $CurrentTab
+     * Handle saving settings for sizes.
      */
-    protected function RenderTabContents($CurrentTab) {
-
-        foreach(array_keys($this->AdminPages) as $Slug) {
-            echo '<div id="fws_rod_tabc_'.$Slug.'" class="fws_rod_tab" style="display:'.($Slug === $CurrentTab ? 'block' : 'none').'">';
-            if (apply_filters('fws_rod_render_tab', null, $Slug) === null) {
-                include "templates/$Slug.php";  // whitelisted slug
-            }
-            echo '</div>';
-        }
-    }
-
-
-    /**
-     * Handle saving settings.
-     */
-    public function OnActionSaveSettings() {
-
-        // store tab focus
-        set_transient(self::$AdminMsgTransient.'_tab', 'settings');
+    public static function OnActionSaveSettingsSizes() {
 
         // validation
-        if (self::ValidateSubmit(static::$ActionSettings)) {
+        if (self::ValidateSubmit(static::$ActionSettingsSizes)) {
 
             // update settings
             $Sizes= array_map('sanitize_text_field', (array)$_POST['fws_ROD_Sizes'] ?? []);
@@ -186,48 +159,34 @@ class Dashboard {
         }
 
         // redirect to viewing context
-        wp_safe_redirect(urldecode($_POST['_wp_http_referer']));
+        wp_safe_redirect(wp_get_referer());
         die();
     }
 
 
     /**
-     * Handle clearing thumbnails.
+     * Handle saving settings for JPEG compression.
      */
-    public static function OnActionDeleteThumbs() {
-
-        global $wpdb;
-
-        // store tab focus
-        set_transient(self::$AdminMsgTransient.'_tab', 'utils');
+    public static function OnActionSaveSettingsJpeg() {
 
         // validation
-        if (self::ValidateSubmit(static::$ActionDeleteThumbs)) {
+        if (self::ValidateSubmit(static::$ActionSettingsJpeg)) {
 
-            $UploadsDir= wp_get_upload_dir()['basedir'];
-            $HandleSizes= Config::Get()['HandleSizes'];
-            $AvoidMimeTypes= apply_filters('fws_rod_avoid_mime_types', ['image/svg+xml']);
-            $TotalCount= 0;
-
-            // get count of attachment records
-            $RecordsCount= $wpdb->get_var("SELECT count(*) FROM `{$wpdb->prefix}postmeta` WHERE `meta_key`='_wp_attachment_metadata'");
-
-            // fetch records in chunks of 1000
-            for ($i=0; $i<$RecordsCount/1000; $i++){
-                $SQL= "SELECT * FROM `{$wpdb->prefix}postmeta` WHERE `meta_key`='_wp_attachment_metadata' LIMIT 1000 OFFSET ".($i*1000);
-
-                // process all records in chunk
-                foreach($wpdb->get_results($SQL, ARRAY_A) as $Row) {
-                    $TotalCount += self::RemoveHandledSizesFromAttachment($Row, $UploadsDir, $HandleSizes, $AvoidMimeTypes);
-                }
-            }
+            // update settings
+            Config::Set([
+                'JpegCompression' => [
+                    'Enabled' => intval($_POST['fws_ROD_JpegCompEnabled']) === 1,
+                    'Quality' => max(min(intval($_POST['fws_ROD_JpegCompQuality']), 100), 0),
+                ],
+            ]);
+            Config::Save();
 
             // prepare confirmation message
-            set_transient(self::$AdminMsgTransient.'_msg', 'updated-' . sprintf(__('Removed %n thumbnails.', 'fws-resize-on-demand'), $TotalCount));
+            set_transient(self::$AdminMsgTransient.'_msg', 'updated-' . __('Settings saved.', 'fws-resize-on-demand'));
         }
 
         // redirect to viewing context
-        wp_safe_redirect(urldecode($_POST['_wp_http_referer']));
+        wp_safe_redirect(wp_get_referer());
         die();
     }
 
@@ -236,9 +195,6 @@ class Dashboard {
      * Handle saving logging settings.
      */
     public static function OnActionEnableLogging() {
-
-        // store tab focus
-        set_transient(self::$AdminMsgTransient.'_tab', 'utils');
 
         // validation
         if (self::ValidateSubmit(static::$ActionEnableLogging)) {
@@ -254,7 +210,7 @@ class Dashboard {
         }
 
         // redirect to viewing context
-        wp_safe_redirect(urldecode($_POST['_wp_http_referer']));
+        wp_safe_redirect(wp_get_referer());
         die();
     }
 
@@ -281,10 +237,16 @@ class Dashboard {
 
         // check each size
         $ExistingSizes = array_keys($Meta['sizes']);
-        foreach ($Meta['sizes'] as $Key => $SizePack) {
+        foreach ($ExistingSizes as $SizeName) {
+
+            // prepare pack
+            $SizePack= $Meta['sizes'][$SizeName] ?? null;
+            if (!$SizePack) {
+                continue;  // already removed
+            }
 
             // should we keep that thumbnail?
-            if (!in_array($Key, $HandleSizes) || in_array($SizePack['mime-type'], $AvoidMimeTypes)) {
+            if (!in_array($SizeName, $HandleSizes) || in_array($SizePack['mime-type'], $AvoidMimeTypes)) {
                 continue;
             }
 
@@ -297,7 +259,7 @@ class Dashboard {
 
             // remove from record
             $NeedUpdateMeta = true;
-            unset($Meta['sizes'][$Key]);
+            $Meta= Image::RemoveSizeFromMetaPack($Meta, $SizeName);
         }
 
         // update meta field
@@ -355,5 +317,203 @@ class Dashboard {
             echo '<div class="'.$Parts[0].'"><p>'.$Parts[1].'</p></div>';
         }
     }
+
+
+    /**
+     * Ajax listener for "fws_rod_delete_thumbs" action.
+     */
+    public function onAjaxDeleteThumbs() {
+
+        // validate nonce
+        check_ajax_referer('fws_rod_delete_thumbs', 'nonce');
+
+        // get params
+        $IsInitial = intval($_REQUEST['step'] ?? '') === 0;
+
+        // log
+        if ($IsInitial) {
+            Services::Log("Delete thumbnails: manually triggered ...");
+        }
+
+        // do job
+        $Result = $this->DeleteThumbs($IsInitial);
+
+        // log
+        if ($Result['done']) {
+            Services::Log("Delete thumbnails: finished.");
+        }
+
+        // send response
+        wp_send_json_success([
+            'success' => true,
+            'data' => $Result,
+        ]);
+    }
+
+
+    /**
+     * Handle clearing thumbnails.
+     */
+    public function DeleteThumbs($IsInitial) {
+
+        global $wpdb;
+        require_once __DIR__.'/Image.php';
+        $ProgressTransient = self::$AdminMsgTransient.'_deleteThumbs_progress';
+        $StoredProgress = explode(':', strval(get_transient($ProgressTransient)));
+
+        $UploadsDir= wp_get_upload_dir()['basedir'];
+        $HandleSizes= Config::Get()['HandleSizes'];
+        $AvoidMimeTypes= apply_filters('fws_rod_avoid_mime_types', ['image/svg', 'image/svg+xml']);
+
+        // get count of attachment records
+        $RecordsCount= $wpdb->get_var("SELECT count(*) FROM `{$wpdb->prefix}postmeta` WHERE `meta_key`='_wp_attachment_metadata'");
+
+        // force initial step if no transient found
+        if (count($StoredProgress) !== 2) {
+            $IsInitial= 1;
+        }
+
+        // store total count in initial step
+        if ($IsInitial) {
+             $TotalNumOfRemovedThumbs= 0;
+             $StoredProgress= [$RecordsCount, 0]; // total-num-of-records : total-num-of-removed-thumbs
+             set_transient($ProgressTransient, implode(':', $StoredProgress), 86400);
+        } else {
+            $TotalNumOfRemovedThumbs= $StoredProgress[1];
+        }
+
+        // fetch records in chunks of 100
+        $Timer= time();
+        $RecordsRemains= $RecordsCount;
+        for ($i=0; $i<$RecordsCount/100; $i++){
+            $RecordsRemains -= 100;
+            $SQL= "SELECT * FROM `{$wpdb->prefix}postmeta` WHERE `meta_key`='_wp_attachment_metadata' LIMIT 100 OFFSET ".($i*100);
+            // process all records in chunk
+            foreach($wpdb->get_results($SQL, ARRAY_A) as $Row) {
+                $TotalNumOfRemovedThumbs += self::RemoveHandledSizesFromAttachment($Row, $UploadsDir, $HandleSizes, $AvoidMimeTypes);
+            }
+            // break after 10 seconds
+            if (time() - $Timer > 10) {
+                break;
+            }
+        }
+        $StoredProgress[1] = $TotalNumOfRemovedThumbs;
+
+        // store transient for next step
+        if ($RecordsRemains <= 0) {
+            delete_transient($ProgressTransient);
+        } else {
+            set_transient($ProgressTransient, implode(':', $StoredProgress), 86400);
+        }
+
+        // report
+        return [
+            'done' => $RecordsRemains <= 0,
+            'progress' => round((1 - max(0, $RecordsRemains) / $StoredProgress[0]) * 100),
+            'report' => sprintf(__('Removed %d thumbnails.', 'fws-resize-on-demand'), $TotalNumOfRemovedThumbs),
+        ];
+    }
+
+
+    /**
+     * Ajax listener for "fws_rod_regen_thumbs" action.
+     */
+    public function onAjaxRegenThumbs() {
+
+        // validate nonce
+        check_ajax_referer('fws_rod_regen_thumbs', 'nonce');
+
+        // get params
+        $IsInitial = intval($_REQUEST['step'] ?? '') === 0;
+        $SkipHandled = intval($_REQUEST['RegenSkipHandled'] ?? '') === 1;
+        $MissingOnly = intval($_REQUEST['RegenMissingOnly'] ?? '') === 1;
+
+        // log
+        if ($IsInitial) {
+            Services::Log("Regenerate thumbnails: manually triggered ...");
+        }
+
+        // do job
+        $Result = $this->RegenerateThumbs($IsInitial, $SkipHandled, $MissingOnly);
+
+        // log
+        if ($Result['done']) {
+            Services::Log("Regenerate thumbnails: finished.");
+        }
+
+        // send response
+        wp_send_json_success([
+            'success' => true,
+            'data' => $Result,
+        ]);
+    }
+
+
+    /**
+     * Handle regenerating thumbnails.
+     *
+     * @param bool $IsInitial
+     * @param bool $SkipHandled
+     * @param bool $MissingOnly
+     * @return array
+     */
+    public function RegenerateThumbs($IsInitial, $SkipHandled, $MissingOnly) {
+
+        global $wpdb;
+        require_once __DIR__.'/Image.php';
+        $ProgressTransient = self::$AdminMsgTransient.'_regenThumbs_progress';
+        $StoredProgress = explode(':', strval(get_transient($ProgressTransient)));
+
+        $UploadsDir= wp_get_upload_dir()['basedir'];
+        $HandleSizes= Config::Get()['HandleSizes'];
+        $AvoidSizes= $SkipHandled ? $HandleSizes : [];
+        $AvoidMimeTypes= apply_filters('fws_rod_avoid_mime_types', ['image/svg', 'image/svg+xml']);
+
+        // force initial step if no transient found
+        if (count($StoredProgress) !== 3) {
+            $IsInitial= 1;
+        }
+
+        // store total count in initial step
+        if ($IsInitial) {
+            // get attachment records
+            $Ids= $wpdb->get_col("SELECT post_id FROM `{$wpdb->prefix}postmeta` WHERE `meta_key`='_wp_attachment_metadata'", 0);
+            $TotalNumOfRegeneratedThumbs= 0;
+            $StoredProgress= [count($Ids), 0, implode(',', $Ids)]; // total-num-of-records : total-num-of-regenerated-thumbs : csv-ids
+            set_transient($ProgressTransient, implode(':', $StoredProgress), 86400);
+        } else {
+            $TotalNumOfRegeneratedThumbs= $StoredProgress[1];
+            $Ids= array_filter(explode(',', $StoredProgress[2]));
+        }
+
+        // loop
+        $Timer= time();
+        foreach($Ids as $Key=>$Id) {
+            $TotalNumOfRegeneratedThumbs += Image::RegenerateAttachmentThumbs($Id, $UploadsDir, $AvoidSizes, $AvoidMimeTypes, $MissingOnly);
+            unset($Ids[$Key]);
+            // break after 10 seconds
+            if (time() - $Timer > 10) {
+                break;
+            }
+        }
+
+        // store transient for next step
+        if (empty($Ids)) {
+            delete_transient($ProgressTransient);
+        } else {
+            $StoredProgress[1] = $TotalNumOfRegeneratedThumbs;
+            $StoredProgress[2] = implode(',', array_values($Ids));
+            set_transient($ProgressTransient, implode(':', $StoredProgress), 86400);
+        }
+
+        // report
+        return [
+            'done' => empty($Ids),
+            'progress' => round((1 - max(0, count($Ids)) / $StoredProgress[0]) * 100),
+            'report' => sprintf(__('Regenerated %d thumbnails.', 'fws-resize-on-demand'), $TotalNumOfRegeneratedThumbs),
+        ];
+    }
+
+
 
 }

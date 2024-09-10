@@ -2,73 +2,24 @@
     defined('ABSPATH') or die();
 
     $Sizes= wp_get_registered_image_subsizes();
-    $Action= \FWS\ROD\Dashboard::$ActionSettings;
-    $OptionName= \FWS\ROD\Config::$OptionName;
+    $ActionSizes= \Tekod\ROD\Dashboard::$ActionSettingsSizes;
+    $ActionJpgCom= \Tekod\ROD\Dashboard::$ActionSettingsJpeg;
+    $OptionName= \Tekod\ROD\Config::$OptionName;
     $RedirectURL= urlencode($_SERVER['REQUEST_URI'] ?? '');
-    $CurrSettings= \FWS\ROD\Config::Get();
+    $CurrSettings= \Tekod\ROD\Config::Get();
 
     $HandleSizes= $CurrSettings['HandleSizes'] ?? [];
     $ForceHandleSizes= apply_filters('fws_rod_enable_sizes', []);
     $ForceDisableSizes= apply_filters('fws_rod_disable_sizes', []);
+    $JpegCompression= $CurrSettings['JpegCompression'] ?? [];
 
 ?>
-<style>
-    .fws_rod h1 {
-        padding-top: 1em;
-    }
-    .fws_rod h3 {
-        padding-top: 2em;
-    }
-    .fws_rod form {
-        border: 1px solid #ddd;
-        background-color: #f8f8f8;
-        padding: 1em 2em;
-        width: 80%;
-        max-width: 60em;
-        margin-left: 3em;
-    }
-    .fws_rod form table {
-        width: 100%;
-        line-height: 1em;
-        border-collapse: collapse;
-    }
-    .fws_rod form table th, .fws_rod form table td {
-        padding: 0.7em 1em;
-        border-bottom: 1px solid #ddd;
-    }
-    .fws_rod form table th {
-        text-align: right;
-        vertical-align: top;
-        width: 3em;
-    }
-    .fws_rod form table th input[type="checkbox"] {
-        margin-top: 1px;
-    }
-    .fws_rod form table th input[type="checkbox"]:disabled {
-        cursor: not-allowed;
-    }
-    .fws_rod form table label {
-        margin-right: 4em;
-    }
-    .fws_rod form table span {
-        color: gray;
-        padding-left: 1em;
-        font-size: 90%;
-    }
-    .fws_rod form table p {
-        display: inline-block;
-        margin: 0;
-        vertical-align: middle;
-        color: gray;
-        font-style: italic;
-    }
-</style>
-<h3><?=esc_html__('Apply on-demand resizing on these image sizes:', 'fws-resize-on-demand')?></h3>
 <form id="RodSettingsForm" action="admin-post.php" method="post">
+    <h4><?=esc_html__('Apply on-demand resizing on these image sizes:', 'fws-resize-on-demand')?></h4>
     <table>
         <tr>
             <td colspan="2">
-                <a href="javascript:FwsRodCheckAll();"><?=esc_html__('Check all', 'fws-resize-on-demand')?></a>
+                <a href="javascript:;" id="fws_rod_checkall"><?=esc_html__('Check all', 'fws-resize-on-demand')?></a>
             </td>
         </tr>
         <?php foreach($Sizes as $Key => $Size) { ?>
@@ -112,7 +63,25 @@
         <?=esc_html(sprintf(__('Total: %d registered sizes', 'fws-resize-on-demand'), count($Sizes)))?>
     </div>
     <?php submit_button(); ?>
-    <input type="hidden" name="action" value="<?php echo $Action; ?>">
-    <?php wp_nonce_field($Action, $OptionName.'_nonce', false); ?>
-    <input type="hidden" name="_wp_http_referer" value="<?php echo $RedirectURL; ?>">
+    <input type="hidden" name="action" value="<?php echo $ActionSizes; ?>">
+    <?php wp_nonce_field($ActionSizes, $OptionName.'_nonce', false); ?>
+    <?php wp_referer_field(); ?>
+</form>
+
+
+<form id="RodSettingsCompressionForm" action="admin-post.php" method="post">
+    <h4><?=esc_html__('Adjust compression level for JPEG images', 'fws-resize-on-demand')?></h4>
+    <div>
+        <?=esc_html__('WordPress media manager typically compress JPEG images with quality 82%, use this tool to reduce it and generate smaller thumbnail files. This will affect all image sizes, not only sizes that we handle. You have to regenerate thumbnails to apply new quality to existing thumbnails.', 'fws-resize-on-demand')?>
+    </div>
+    <div style="padding:2em 0 0 0">
+        <input type="checkbox" name="fws_ROD_JpegCompEnabled" id="fws_ROD_JpegCompEnabled" value="1"<?php checked($JpegCompression['Enabled'] ?? false); ?>>
+        <label for="fws_ROD_JpegCompEnabled"><?=esc_html__('Enable custom JPEG quality', 'fws-resize-on-demand')?></label>
+        &nbsp;
+        <input type="number" name="fws_ROD_JpegCompQuality" value="<?=intval($JpegCompression['Quality'] ?? 82)?>" class="small-text" /> %
+    </div>
+    <?php submit_button(__('Save Changes', 'fws-resize-on-demand'), 'primary large', 'submit'); ?>
+    <input type="hidden" name="action" value="<?php echo esc_attr($ActionJpgCom); ?>">
+    <?php wp_nonce_field($ActionJpgCom, $OptionName.'_nonce', false); ?>
+    <?php wp_referer_field(); ?>
 </form>
