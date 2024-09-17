@@ -53,8 +53,8 @@ class Image {
 
         // skip on upscale
         $Dim= image_resize_dimensions(
-            intval(self::$ImageMetaData['width']),
-            intval(self::$ImageMetaData['height']),
+            intval(self::$ImageMetaData['width'] ?? 0),
+            intval(self::$ImageMetaData['height'] ?? 0),
             $SizeData['width'],
             $SizeData['height'],
             $SizeData['crop']

@@ -159,7 +159,7 @@ class Dashboard {
         }
 
         // redirect to viewing context
-        wp_safe_redirect(wp_get_referer());
+        wp_safe_redirect(urldecode($_POST['_wp_http_referer']));
         die();
     }
 
@@ -186,7 +186,7 @@ class Dashboard {
         }
 
         // redirect to viewing context
-        wp_safe_redirect(wp_get_referer());
+        wp_safe_redirect(urldecode($_POST['_wp_http_referer']));
         die();
     }
 
@@ -210,7 +210,7 @@ class Dashboard {
         }
 
         // redirect to viewing context
-        wp_safe_redirect(wp_get_referer());
+        wp_safe_redirect(urldecode($_POST['_wp_http_referer']));
         die();
     }
 

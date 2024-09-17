@@ -65,7 +65,7 @@
     <?php submit_button(); ?>
     <input type="hidden" name="action" value="<?php echo $ActionSizes; ?>">
     <?php wp_nonce_field($ActionSizes, $OptionName.'_nonce', false); ?>
-    <?php wp_referer_field(); ?>
+    <input type="hidden" name="_wp_http_referer" value="<?php echo $RedirectURL; ?>">
 </form>
 
 
@@ -83,5 +83,5 @@
     <?php submit_button(__('Save Changes', 'fws-resize-on-demand'), 'primary large', 'submit'); ?>
     <input type="hidden" name="action" value="<?php echo esc_attr($ActionJpgCom); ?>">
     <?php wp_nonce_field($ActionJpgCom, $OptionName.'_nonce', false); ?>
-    <?php wp_referer_field(); ?>
+    <input type="hidden" name="_wp_http_referer" value="<?php echo esc_attr($RedirectURL); ?>">
 </form>

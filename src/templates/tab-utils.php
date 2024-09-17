@@ -18,7 +18,7 @@
             <?php submit_button(__('Delete', 'fws-resize-on-demand'), 'primary large', 'submit', true, ['id'=>'fws_rod_utl_delete']); ?>
             <input type="hidden" name="action" value="<?php echo esc_attr($ActionDel); ?>">
             <?php wp_nonce_field($ActionDel, '_wpnonce', false); ?>
-            <?php wp_referer_field(); ?>
+            <input type="hidden" name="_wp_http_referer" value="<?php echo esc_attr($RedirectURL); ?>">
         </div>
     </form>
 
@@ -36,7 +36,7 @@
             <?php submit_button(__('Regenerate', 'fws-resize-on-demand'), 'primary large', 'submit', true, ['id'=>'fws_rod_utl_regenerate']); ?>
             <input type="hidden" name="action" value="<?php echo esc_attr($ActionRegen); ?>">
             <?php wp_nonce_field($ActionRegen, '_wpnonce', false); ?>
-            <?php wp_referer_field(); ?>
+            <input type="hidden" name="_wp_http_referer" value="<?php echo esc_attr($RedirectURL); ?>">
         </div>
     </form>
 
@@ -49,7 +49,7 @@
         <?php submit_button(__('Save Changes', 'fws-resize-on-demand'), 'primary large', 'submit'); ?>
         <input type="hidden" name="action" value="<?php echo esc_attr($ActionLog); ?>">
         <?php wp_nonce_field($ActionLog, $OptionName.'_nonce', false); ?>
-        <?php wp_referer_field(); ?>
+        <input type="hidden" name="_wp_http_referer" value="<?php echo esc_attr($RedirectURL); ?>">
         <div style="padding: 1em 0 2em 0">
             <?=esc_html__('Log file is located at:', 'fws-resize-on-demand')?>
             <br>
