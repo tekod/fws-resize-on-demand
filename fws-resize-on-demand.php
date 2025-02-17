@@ -18,7 +18,7 @@ defined('ABSPATH') or die();
 // constants
 define('TEKOD_ROD_PLUGINBASENAME', plugin_basename(__FILE__));
 define('TEKOD_ROD_DIR', __DIR__);
-define('TEKOD_ROD_VERSION', '0.5.0');
+define('TEKOD_ROD_VERSION', '0.5.1');
 
 
 // load classes
